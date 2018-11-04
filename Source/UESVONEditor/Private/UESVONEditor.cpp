@@ -15,9 +15,7 @@ void FUESVONEditorModule::StartupModule()
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
 	//PropertyModule.RegisterCustomPropertyTypeLayout(ASVONVolume::StaticClass(), FOnGetDetailCustomizationInstance::CreateRaw(&FSVONVolumeDetails::MakeInstance));
-
 	PropertyModule.RegisterCustomClassLayout("SVONVolume", FOnGetDetailCustomizationInstance::CreateStatic(&FSVONVolumeDetails::MakeInstance));
-
 
 	//create your factory and shared pointer to it.
 	//TSharedPtr<FGOAPAtomPinFactory> GOAPAtomPinFactory = MakeShareable(new FGOAPAtomPinFactory());

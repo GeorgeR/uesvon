@@ -14,7 +14,7 @@ void FSVONPath::DebugDraw(UWorld* World)
 {
 	for (auto i = 0; i < Points.Num(); i++)
 	{
-		auto& Point = Points[i]
+        auto& Point = Points[i];
 		if (i < Points.Num() - 1)
 		{
 			FVector OffSet(0.f);

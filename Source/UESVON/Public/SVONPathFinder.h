@@ -13,7 +13,7 @@ struct FSVONPathFinderSettings
 	bool bDebugOpenNodes;
 	bool bUseUnitCost;
 	float UnitCost;
-	float EstimateWeight;
+	float WeightEstimate;
 	float NodeSizeCompensation;
 	int SmoothingIterations;
 	ESVONPathCostType PathCostType;
@@ -23,7 +23,7 @@ struct FSVONPathFinderSettings
 		: bDebugOpenNodes(false)
 		, bUseUnitCost(false)
 		, UnitCost(1.0f)
-		, EstimateWeight(1.0f)
+		, WeightEstimate(1.0f)
 		, NodeSizeCompensation(1.0f)
 		, SmoothingIterations(0.f)
 		, PathCostType(ESVONPathCostType::SPCT_Euclidean) {}
@@ -32,10 +32,10 @@ struct FSVONPathFinderSettings
 class UESVON_API FSVONPathFinder
 {
 public:
-	FSVONPathFinder(UWorld* aWorld, const ASVONVolume& aVolume, FSVONPathFinderSettings& aSettings)
-		: World(aWorld),
-		Volume(aVolume),
-		Settings(aSettings) { };
+	FSVONPathFinder(UWorld* World, const ASVONVolume& Volume, FSVONPathFinderSettings& Settings)
+		: World(World),
+		Volume(Volume),
+		Settings(Settings) { };
 
 	~FSVONPathFinder() { };
 
@@ -76,7 +76,7 @@ private:
 	void ProcessLink(const FSVONLink& Neighbor);
 
 	/* Constructs the path by navigating back through our CameFrom map */
-	void BuildPath(TMap<FSVONLink, FSVONLink>& aCameFrom, FSVONLink aCurrent, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath);
+	void BuildPath(TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath);
 
 	void Smooth_Chaikin(TArray<FVector>& somePoints, int aNumIterations);
 };

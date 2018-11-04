@@ -47,7 +47,7 @@ public:
 	bool bShowMortonCodes = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
-	bool bShowNeighbourLinks = false;
+	bool bShowNeighborLinks = false;
 	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
 	bool bShowParentChildLinks = false;

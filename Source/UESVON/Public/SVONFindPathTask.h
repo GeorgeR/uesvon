@@ -45,7 +45,7 @@ protected:
 		
 	}
 
-	// This next section of code needs to be here.  Not important as to why.
+	// This next section of Code needs to be here.  Not important as to why.
 
 	FORCEINLINE TStatId GetStatId() const
 	{

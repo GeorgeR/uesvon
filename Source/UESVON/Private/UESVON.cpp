@@ -8,7 +8,7 @@ DEFINE_LOG_CATEGORY(UESVON);
 
 void FUESVONModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	// This Code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 }
 
 void FUESVONModule::ShutdownModule()

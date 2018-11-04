@@ -11,18 +11,18 @@ typedef uint_fast32_t FPosInt;
 UENUM(BlueprintType)		
 enum class EBuildTrigger : uint8
 {
-	BTOnEdit	UMETA(DisplayName = "On Edit"),
-	BTManual 	UMETA(DisplayName = "Manual")
+	BT_OnEdit	UMETA(DisplayName = "On Edit"),
+	BT_Manual 	UMETA(DisplayName = "Manual")
 };
 
 enum class EDirection : uint8
 {
-	DPositiveX  UMETA(DisplayName = "+X"), 
-    DNegativeX  UMETA(DisplayName = "-X"),
-    DPositiveY  UMETA(DisplayName = "+Y"),
-    DNegativeY  UMETA(DisplayName = "-Y"),
-    DPositiveZ  UMETA(DisplayName = "+Z"),
-    DNegativeZ  UMETA(DisplayName = "-Z")
+	D_PositiveX  UMETA(DisplayName = "+X"), 
+    D_NegativeX  UMETA(DisplayName = "-X"),
+    D_PositiveY  UMETA(DisplayName = "+Y"),
+    D_NegativeY  UMETA(DisplayName = "-Y"),
+    D_PositiveZ  UMETA(DisplayName = "+Z"),
+    D_NegativeZ  UMETA(DisplayName = "-Z")
 };
 
 #define LEAF_LAYER_INDEX 14;

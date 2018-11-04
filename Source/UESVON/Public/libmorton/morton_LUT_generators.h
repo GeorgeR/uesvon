@@ -72,7 +72,7 @@ void generate3D_EncodeLUT(size_t how_many_bits, uint_fast32_t*& x_table, uint_fa
 	}
 }
 
-// Generate a decode tables for 3D morton code
+// Generate a decode tables for 3D morton Code
 // how_many_bits should be a multiple of three, to ensure you can shift results together
 void generate3D_DecodeLUT(size_t how_many_bits, uint_fast8_t*& x_table, uint_fast8_t*& y_table, uint_fast8_t*& z_table, bool print_tables){
 	size_t total = 1 << how_many_bits;

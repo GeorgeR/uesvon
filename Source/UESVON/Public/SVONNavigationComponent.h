@@ -34,7 +34,7 @@ public:
 	float UnitCost = 10.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Heuristics")
-	float EstimateWeight = 1.0f;
+	float WeightEstimate = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Heuristics")
 	float NodeSizeCompensation = 1.0f;
@@ -61,7 +61,7 @@ protected:
 	// Check the scene for a valid volume that I am within the extents of
 	bool FindVolume();
 
-	// Print current layer/morton code information
+	// Print current layer/morton Code information
 	void DebugLocalLocation(FVector& aPosition);
 
 	FSVONLink LastLocation;

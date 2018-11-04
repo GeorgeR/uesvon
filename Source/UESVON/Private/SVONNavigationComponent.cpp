@@ -158,7 +158,7 @@ bool USVONNavigationComponent::FindPathAsync(const FVector& StartLocation, const
 		DebugPoints.Empty();
 		PointDebugIndex = -1;
 
-		(new FAutoDeleteAsyncTask<FSVONFindPathTask>(*CurrentNavVolume, GetWorld(), StartNavLink, TargetNavLink, StartLocation, TargetLocation, NavPath, JobQueue, DebugPoints))->StartBackgroundTask();
+		(new FAutoDeleteAsyncTask<FSVONFindPathTask>(*CurrentNavVolume, GetWorld(), StartNavLink, TargetNavLink, StartLocation, TargetLocation, OutNavPath, JobQueue, DebugPoints))->StartBackgroundTask();
 
 		bIsBusy = true;
 
@@ -168,7 +168,7 @@ bool USVONNavigationComponent::FindPathAsync(const FVector& StartLocation, const
 	return false;
 }
 
-bool USVONNavigationComponent::FindPathImmediate(const FVector& StartLocation, const FVector& StartLocation, FNavPathSharedPtr* OutNavPath)
+bool USVONNavigationComponent::FindPathImmediate(const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutNavPath)
 {
 	UE_LOG(UESVON, Display, TEXT("Finding path immediate from %s and %s"), *StartLocation.ToString(), *TargetLocation.ToString());
 
@@ -204,9 +204,9 @@ bool USVONNavigationComponent::FindPathImmediate(const FVector& StartLocation, c
 		TArray<FVector> DebugOpenPoints;
 
 		FSVONPathFinderSettings Settings;
-		Settings.bUseUnitCost = UseUnitCost;
+		Settings.bUseUnitCost = bUseUnitCost;
 		Settings.UnitCost = UnitCost;
-		Settings.EstimateWeight = EstimateWeight;
+		Settings.WeightEstimate = WeightEstimate;
 		Settings.NodeSizeCompensation = NodeSizeCompensation;
 		Settings.PathCostType = PathCostType;
 		Settings.SmoothingIterations = SmoothingIterations;
@@ -236,7 +236,7 @@ void USVONNavigationComponent::DebugLocalLocation(FVector& OutLocation)
 			FSVONMediator::GetVolumeXYZ(GetOwner()->GetActorLocation(), *CurrentNavVolume, i, Location);
 
 			auto Code = morton3D_64_encode(Location.X, Location.Y, Location.Z);
-			auto CodeString = FString::FromInt(code);
+			auto CodeString = FString::FromInt(Code);
 			DrawDebugString(GetWorld(), GetOwner()->GetActorLocation() + FVector(0.f, 0.f, i * 50.0f), Location.ToString() + " - " + CodeString, nullptr, FColor::White, 0.01f);
 		}
 	}
