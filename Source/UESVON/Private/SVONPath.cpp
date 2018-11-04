@@ -1,34 +1,28 @@
-
 #include "SVONPath.h"
 
-void SVONPath::AddPoint(const FVector& aPoint)
+void FSVONPath::AddPoint(const FVector& Point)
 {
-	myPoints.Add(aPoint);
+	Points.Add(Point);
 }
 
-void SVONPath::ResetPath()
+void FSVONPath::ResetPath()
 {
-	myPoints.Empty();
+	Points.Empty();
 }
 
-void SVONPath::DebugDraw(UWorld* aWorld)
+void FSVONPath::DebugDraw(UWorld* World)
 {
-	for (int i = 0; i < myPoints.Num(); i++)
+	for (auto i = 0; i < Points.Num(); i++)
 	{
-		FVector& point = myPoints[i];
-		
-		
-		if (i < myPoints.Num() - 1)
+		auto& Point = Points[i]
+		if (i < Points.Num() - 1)
 		{
-			FVector offSet(0.f);
-			if (i == 0)
-				//offSet.Z -= 300.f;
+			FVector OffSet(0.f);
+			//if (i == 0)
+			//	//offSet.Z -= 300.f;
 			
-				
-			DrawDebugSphere(aWorld, point + offSet, 30.f, 20, FColor::Cyan, true, -1.f, 0, 100.f);
-
-			DrawDebugLine(aWorld, point + offSet, myPoints[i+1], FColor::Cyan, true, -1.f, 0, 100.f);
+			DrawDebugSphere(World, Point + OffSet, 30.f, 20, FColor::Cyan, true, -1.f, 0, 100.f);
+			DrawDebugLine(World, Point + OffSet, Points[i+1], FColor::Cyan, true, -1.f, 0, 100.f);
 		}
 	}
 }
-

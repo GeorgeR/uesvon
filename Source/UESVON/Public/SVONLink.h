@@ -2,49 +2,34 @@
 
 #include "CoreMinimal.h"
 
-struct UESVON_API SVONLink
+struct UESVON_API FSVONLink
 {
-	unsigned int myLayerIndex:4;
-	unsigned int myNodeIndex:22;
-	unsigned int mySubnodeIndex:6;
+public:
+    uint8 LayerIndex:4;
+    uint_fast32_t NodeIndex:22;
+	uint32 SubNodeIndex:6;
 
-	SVONLink() : 
-		myLayerIndex(15),
-		myNodeIndex(0),
-		mySubnodeIndex(0) {}
+	FSVONLink() 
+        : LayerIndex(15),
+		NodeIndex(0),
+		SubNodeIndex(0) { }
 
-	SVONLink(uint8 aLayer, uint_fast32_t aNodeIndex, uint8 aSubNodeIndex)
-		: myLayerIndex(aLayer),
-		myNodeIndex(aNodeIndex),
-		mySubnodeIndex(aSubNodeIndex) {}
+	FSVONLink(uint8 Layer, uint_fast32_t NodeIndex, uint8 SubNodeIndex)
+		: LayerIndex(Layer),
+		NodeIndex(NodeIndex),
+		SubNodeIndex(SubNodeIndex) {}
 
-	uint8 GetLayerIndex() const { return myLayerIndex; }
-	void SetLayerIndex(const uint8 aLayerIndex) { myLayerIndex = aLayerIndex; }
+	bool IsValid() const { return LayerIndex != 15; }
+	void SetInvalid() { LayerIndex = 15; }
 
-	uint_fast32_t GetNodeIndex() const { return myNodeIndex; }
-	void SetNodeIndex(const uint_fast32_t aNodeIndex) { myNodeIndex = aNodeIndex; }
+	bool operator==(const FSVONLink& Other) const { return memcmp(this, &Other, sizeof(FSVONLink)) == 0; }
 
-	uint8 GetSubnodeIndex() const { return mySubnodeIndex; }
-	void SetSubnodeIndex(const uint8 aSubnodeIndex) { mySubnodeIndex = aSubnodeIndex; }
+	static FSVONLink GetInvalidLink() { return FSVONLink(15, 0, 0); }
 
-	bool IsValid() const { return myLayerIndex != 15; }
-	void SetInvalid() { myLayerIndex = 15; }
-
-	bool operator==(const SVONLink& aOther) const {
-		return memcmp(this, &aOther, sizeof(SVONLink)) == 0;
-	}
-
-	static SVONLink GetInvalidLink() { return SVONLink(15, 0, 0); }
-
-	FString ToString() 
-	{
-		return FString::Printf(TEXT("%i:%i:%i"), myLayerIndex, myNodeIndex, mySubnodeIndex);
-	};
-
+	FString ToString() { return FString::Printf(TEXT("%i:%i:%i"), LayerIndex, NodeIndex, SubNodeIndex);	}
 };
 
-FORCEINLINE uint32 GetTypeHash(const SVONLink& b)
+FORCEINLINE uint32 GetTypeHash(const FSVONLink& Value)
 {
-	return FCrc::MemCrc_DEPRECATED(&b, sizeof(SVONLink));
+	return FCrc::MemCrc_DEPRECATED(&Value, sizeof(FSVONLink));
 }
-

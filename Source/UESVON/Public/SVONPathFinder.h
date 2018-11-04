@@ -1,86 +1,82 @@
-
 #pragma once
+
 #include "CoreMinimal.h"
 
-
-struct SVONPath;
+struct FSVONPath;
 class ASVONVolume;
-struct SVONLink;
+struct FSVONLink;
 
 struct FNavigationPath;
 
-
-struct SVONPathFinderSettings
+struct FSVONPathFinderSettings
 {
-	bool myDebugOpenNodes;
-	bool myUseUnitCost;
-	float myUnitCost;
-	float myEstimateWeight;
-	float myNodeSizeCompensation;
-	int mySmoothingIterations;
-	ESVONPathCostType myPathCostType;
-	TArray<FVector> myDebugPoints;
-	
+	bool bDebugOpenNodes;
+	bool bUseUnitCost;
+	float UnitCost;
+	float EstimateWeight;
+	float NodeSizeCompensation;
+	int SmoothingIterations;
+	ESVONPathCostType PathCostType;
+	TArray<FVector> DebugPoints;
 
-	SVONPathFinderSettings()
-		: myDebugOpenNodes(false)
-		, myUseUnitCost(false)
-		, myUnitCost(1.0f)
-		, myEstimateWeight(1.0f)
-		, myNodeSizeCompensation(1.0f)
-		, mySmoothingIterations(0.f)
-		, myPathCostType(ESVONPathCostType::EUCLIDEAN) {}
+	FSVONPathFinderSettings()
+		: bDebugOpenNodes(false)
+		, bUseUnitCost(false)
+		, UnitCost(1.0f)
+		, EstimateWeight(1.0f)
+		, NodeSizeCompensation(1.0f)
+		, SmoothingIterations(0.f)
+		, PathCostType(ESVONPathCostType::SPCT_Euclidean) {}
 };
 
-class UESVON_API SVONPathFinder
+class UESVON_API FSVONPathFinder
 {
 public:
-	SVONPathFinder(UWorld* aWorld, const ASVONVolume& aVolume, SVONPathFinderSettings& aSettings)
-		: myWorld(aWorld),
-		myVolume(aVolume),
-		mySettings(aSettings)
-		{};
-	~SVONPathFinder() {};
+	FSVONPathFinder(UWorld* aWorld, const ASVONVolume& aVolume, FSVONPathFinderSettings& aSettings)
+		: World(aWorld),
+		Volume(aVolume),
+		Settings(aSettings) { };
+
+	~FSVONPathFinder() { };
 
 	/* Performs an A* search from start to target navlink */
-	int FindPath(const SVONLink& aStart, const SVONLink& aTarget, const FVector& aStartPos, const FVector& aTargetPos, FNavPathSharedPtr* oPath);
+	int FindPath(const FSVONLink& Start, const FSVONLink& Target, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath);
 
-	const SVONPath& GetPath() const { return myPath; }
+	FORCEINLINE const FSVONPath& GetPath() const { return Path; }
 	//const FNavigationPath& GetNavPath();  
 
 private:
-	SVONPath myPath;
+	FSVONPath Path;
 
-	FNavigationPath myNavPath;
+	FNavigationPath NavPath;
 
-	TArray<SVONLink> myOpenSet;
-	TSet<SVONLink> myClosedSet;
+	TArray<FSVONLink> OpenSet;
+	TSet<FSVONLink> ClosedSet;
 
-	TMap<SVONLink, SVONLink> myCameFrom;
+	TMap<FSVONLink, FSVONLink> CameFrom;
 
-	TMap<SVONLink, float>    myGScore;
-	TMap<SVONLink, float>    myFScore;
+	TMap<FSVONLink, float> GScore;
+	TMap<FSVONLink, float> FScore;
 
-	SVONLink myCurrent;
-	SVONLink myGoal;
+	FSVONLink Current;
+	FSVONLink Goal;
 
-	const ASVONVolume& myVolume;
+	const ASVONVolume& Volume;
 
-	SVONPathFinderSettings& mySettings;
+	FSVONPathFinderSettings& Settings;
 
-	UWorld* myWorld;
+	UWorld* World;
 
 	/* A* heuristic calculation */
-	float HeuristicScore(const SVONLink& aStart, const SVONLink& aTarget);
+	float HeuristicScore(const FSVONLink& Start, const FSVONLink& Target);
 
 	/* Distance between two links */
-	float GetCost(const SVONLink& aStart, const SVONLink& aTarget);
+	float GetCost(const FSVONLink& Start, const FSVONLink& Target);
 
-	void ProcessLink(const SVONLink& aNeighbour);
+	void ProcessLink(const FSVONLink& Neighbor);
 
 	/* Constructs the path by navigating back through our CameFrom map */
-	void BuildPath(TMap<SVONLink, SVONLink>& aCameFrom, SVONLink aCurrent, const FVector& aStartPos, const FVector& aTargetPos, FNavPathSharedPtr* oPath);
+	void BuildPath(TMap<FSVONLink, FSVONLink>& aCameFrom, FSVONLink aCurrent, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath);
 
 	void Smooth_Chaikin(TArray<FVector>& somePoints, int aNumIterations);
-
 };

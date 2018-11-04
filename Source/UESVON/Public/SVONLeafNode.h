@@ -2,42 +2,42 @@
 
 #include "libmorton/morton.h"
 
-struct UESVON_API SVONLeafNode
+struct UESVON_API FSVONLeafNode
 {
-	uint_fast64_t myVoxelGrid = 0;
+public:
+	uint_fast64_t VoxelGrid = 0;
 
-
-	inline bool GetNodeAt(uint_fast32_t aX, uint_fast32_t aY, uint_fast32_t aZ) const
+	inline bool GetNodeAt(uint_fast32_t X, uint_fast32_t Y, uint_fast32_t Z) const
 	{
 		uint_fast64_t index = 0;
-		morton3D_64_decode(index, aX, aY, aZ);
-		return (myVoxelGrid & (1ULL << index)) != 0;
+		morton3D_64_decode(index, X, Y, Z);
+		return (VoxelGrid & (1ULL << index)) != 0;
 	}
 
-	inline void SetNodeAt(uint_fast32_t aX, uint_fast32_t aY, uint_fast32_t aZ)
+	inline void SetNodeAt(uint_fast32_t X, uint_fast32_t Y, uint_fast32_t Z)
 	{
 		uint_fast64_t index = 0;
-		morton3D_64_decode(index, aX, aY, aZ);
-		myVoxelGrid |= 1ULL << index;
+		morton3D_64_decode(index, X, Y, Z);
+		VoxelGrid |= 1ULL << index;
 	}
 
-	inline void SetNode(uint8 aIndex)
+	inline void SetNode(uint8 Index)
 	{
-		myVoxelGrid |= 1ULL << aIndex;
+		VoxelGrid |= 1ULL << Index;
 	}
 
-	inline bool GetNode(mortoncode_t aIndex) const
+	inline bool GetNode(FMortonCode Index) const
 	{
-		return (myVoxelGrid & (1ULL << aIndex)) != 0;
+		return (VoxelGrid & (1ULL << Index)) != 0;
 	}
 
 	inline bool IsCompletelyBlocked() const
 	{
-		return myVoxelGrid == -1;
+		return VoxelGrid == -1;
 	}
 
 	inline bool IsEmpty() const
 	{
-		return myVoxelGrid == 0;
+		return VoxelGrid == 0;
 	}
 };

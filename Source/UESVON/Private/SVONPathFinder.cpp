@@ -1,207 +1,186 @@
 #include "SVONPathFinder.h"
+
 #include "SVONLink.h"
-#include "AI/Navigation/NavigationData.h"
+#include "NavigationData.h"
 
-
-int SVONPathFinder::FindPath(const SVONLink& aStart, const SVONLink& aGoal, const FVector& aStartPos, const FVector& aTargetPos, FNavPathSharedPtr* oPath)
+int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath)
 {
-	myOpenSet.Empty();
-	myClosedSet.Empty();
-	myCameFrom.Empty();
-	myFScore.Empty();
-	myGScore.Empty();
-	myCurrent = SVONLink();
-	myGoal = aGoal;
+	OpenSet.Empty();
+	ClosedSet.Empty();
+	CameFrom.Empty();
+	FScore.Empty();
+	GScore.Empty();
+	Current = FSVONLink();
+	this->Goal = Goal;
 
+    OpenSet.Add(Start);
+	CameFrom.Add(Start, Start);
+	GScore.Add(Start, 0);
+	FScore.Add(Start, HeuristicScore(Start, this->Goal)); // Distance to target
 
-	myOpenSet.Add(aStart);
-	myCameFrom.Add(aStart, aStart);
-	myGScore.Add(aStart, 0);
-	myFScore.Add(aStart, HeuristicScore(aStart, myGoal)); // Distance to target
-
-	int numIterations = 0;
-
-	while (myOpenSet.Num() > 0)
+	int NumIterations = 0;
+	while (OpenSet.Num() > 0)
 	{
-		
-		float lowestScore = FLT_MAX;
-		for (SVONLink& link : myOpenSet)
+		float LowestScore = FLT_MAX;
+		for (FSVONLink& Link : OpenSet)
 		{
-			if (!myFScore.Contains(link) || myFScore[link] < lowestScore)
+			if (!FScore.Contains(Link) || FScore[Link] < LowestScore)
 			{
-				lowestScore = myFScore[link];
-				myCurrent = link;
+				LowestScore = FScore[link];
+				Current = link;
 			}
 		}
 
-		myOpenSet.Remove(myCurrent);
-		myClosedSet.Add(myCurrent);
+		OpenSet.Remove(Current);
+		ClosedSet.Add(Current);
 
-		if (myCurrent == myGoal)
+		if (Current == Goal)
 		{
-			BuildPath(myCameFrom, myCurrent, aStartPos, aTargetPos, oPath);
-			UE_LOG(UESVON, Display, TEXT("Pathfinding complete, iterations : %i"), numIterations);
+			BuildPath(CameFrom, Current, StartLocation, TargetLocation, OutPath);
+			UE_LOG(UESVON, Display, TEXT("Pathfinding complete, iterations : %i"), NumIterations);
 			return 1;
 		}
 
-		const SVONNode& currentNode = myVolume.GetNode(myCurrent);
+		const FSVONNode& CurrentNode = Volume.GetNode(Current);
 
-		TArray<SVONLink> neighbours;
-
-		if (myCurrent.GetLayerIndex() == 0 && currentNode.myFirstChild.IsValid())
-		{
-			
-			myVolume.GetLeafNeighbours(myCurrent, neighbours);
-		}
+		TArray<FSVONLink> Neighbors;
+		if (Current.GetLayerIndex() == 0 && CurrentNode.FirstChild.IsValid()
+			Volume.GetLeafNeighbors(Current, Neighbors);
 		else
-		{
-			myVolume.GetNeighbours(myCurrent, neighbours);
-		}
+			Volume.GetNeighbors(Current, Neighbors);
 
-		for (const SVONLink& neighbour : neighbours)
-		{
-			ProcessLink(neighbour);
-		}
+		for (const FSVONLink& Neighbor : Neighbors)
+			ProcessLink(Neighbor)
 
-		numIterations++;
+		NumIterations++;
 	}
 
-	UE_LOG(UESVON, Display, TEXT("Pathfinding failed, iterations : %i"), numIterations);
+	UE_LOG(UESVON, Display, TEXT("Pathfinding failed, iterations : %i"), NumIterations);
+
 	return 0;
 }
 
-float SVONPathFinder::HeuristicScore( const SVONLink& aStart, const SVONLink& aTarget)
+float FSVONPathFinder::HeuristicScore(const FSVONLink& Start, const FSVONLink& Target)
 {
 	/* Just using manhattan distance for now */
-	float score = 0.f;
+	float Score = 0.f;
 
-	FVector startPos, endPos;
-	myVolume.GetLinkPosition(aStart, startPos);
-	myVolume.GetLinkPosition(aTarget, endPos);
-	switch (mySettings.myPathCostType)
+	FVector StartLocation, EndLocation;
+	Volume.GetLinkLocation(Start, StartLocation);
+	Volume.GetLinkLocation(Target, EndLocation);
+	switch (Settings.PathCostType)
 	{
-		case ESVONPathCostType::MANHATTAN:
-			score = FMath::Abs(endPos.X - startPos.X) + FMath::Abs(endPos.Y - startPos.Y) + FMath::Abs(endPos.Z - startPos.Z);
+		case ESVONPathCostType::SPCT_Manhattan:
+			Score = FMath::Abs(EndLocation.X - StartLocation.X) + FMath::Abs(EndLocation.Y - StartLocation.Y) + FMath::Abs(EndLocation.Z - StartLocation.Z);
 			break;
-		case ESVONPathCostType::EUCLIDEAN:
+
+		case ESVONPathCostType::SPCT_Euclidean:
 		default:
-			score = (startPos - endPos).Size();
+			Score = (StartLocation - EndLocation).Size();
 			break;
 	}
 	
-	score *= (1.0f - (static_cast<float>(aTarget.GetLayerIndex()) / static_cast<float>(myVolume.GetMyNumLayers())) * mySettings.myNodeSizeCompensation);
+	Score *= (1.0f - (static_cast<float>(Target.GetLayerIndex()) / static_cast<float>(Volume.GetNumLayers())) * Settings.NodeSizeCompensation);
 
-	return score;
+	return Score;
 }
 
-float SVONPathFinder::GetCost( const SVONLink& aStart, const SVONLink& aTarget)
+float FSVONPathFinder::GetCost(const FSVONLink& Start, const FSVONLink& Target)
 {
-	float cost = 0.f;
+	float Cost = 0.f;
 
-	// Unit cost implementation
-	if (mySettings.myUseUnitCost)
-	{
-		cost = mySettings.myUnitCost;
-	}
+	// Unit Cost implementation
+	if (Settings.UseUnitCost)
+		Cost = Settings.UnitCost;
 	else
 	{
-
-
-		FVector startPos(0.f), endPos(0.f);
-		const SVONNode& startNode = myVolume.GetNode(aStart);
-		const SVONNode& endNode = myVolume.GetNode(aTarget);
-		myVolume.GetLinkPosition(aStart, startPos);
-		myVolume.GetLinkPosition(aTarget, endPos);
-		cost = (startPos - endPos).Size();
+		FVector StartLocation(0.f), EndLocation(0.f);
+		const FSVONNode& StartNode = Volume.GetNode(Start);
+		const FSVONNode& EndNode = Volume.GetNode(Target);
+		Volume.GetLinkLocation(Start, StartLocation);
+		Volume.GetLinkLocation(Target, EndLocation);
+		Cost = (StartLocation - EndLocation).Size();
 	}
 
-	cost *= (1.0f - (static_cast<float>(aTarget.GetLayerIndex()) / static_cast<float>(myVolume.GetMyNumLayers())) * mySettings.myNodeSizeCompensation);
+	Cost *= (1.0f - (static_cast<float>(Target.GetLayerIndex()) / static_cast<float>(Volume.GetNumLayers())) * Settings.NodeSizeCompensation);
 		
-	return cost;
+	return Cost;
 }
 
-void SVONPathFinder::ProcessLink(const SVONLink& aNeighbour)
+void FSVONPathFinder::ProcessLink(const FSVONLink& Neighbor)
 {
-	if (aNeighbour.IsValid())
+	if (Neighbor.IsValid())
 	{
-		if (myClosedSet.Contains(aNeighbour))
+		if (ClosedSet.Contains(Neighbor))
 			return;
 
-		if (!myOpenSet.Contains(aNeighbour))
+		if (!OpenSet.Contains(Neighbor))
 		{
-			myOpenSet.Add(aNeighbour);
+			OpenSet.Add(Neighbor);
 
-			if (mySettings.myDebugOpenNodes)
+			if (Settings.bDebugOpenNodes)
 			{
-				FVector pos;
-				myVolume.GetLinkPosition(aNeighbour, pos);
-				mySettings.myDebugPoints.Add(pos);
-			}
-
+				FVector Location;
+				Volume.GetLinkLocation(Neighbor, Location);
+				Settings.DebugPoints.Add(Location);
+			
 		}
 
-		float t_gScore = FLT_MAX;
-		if (myGScore.Contains(myCurrent))
-			t_gScore = myGScore[myCurrent] + GetCost(myCurrent, aNeighbour);
+		float GScore = FLT_MAX;
+		if (this->GScore.Contains(Current))
+			GScore = this->GScore[Current] + GetCost(Current, Neighbor);
 		else
-			myGScore.Add(myCurrent, FLT_MAX);
+			this->GScore.Add(Current, FLT_MAX);
 
-		if (t_gScore >= (myGScore.Contains(aNeighbour) ? myGScore[aNeighbour] : FLT_MAX))
+		if (GScore >= (this->GScore.Contains(Neighbor) ? this->GScore[Neighbor] : FLT_MAX))
 			return;
 
-		myCameFrom.Add(aNeighbour, myCurrent);
-		myGScore.Add(aNeighbour, t_gScore);
-		myFScore.Add(aNeighbour, myGScore[aNeighbour] + (mySettings.myEstimateWeight * HeuristicScore(aNeighbour, myGoal)));
+		CameFrom.Add(Neighbor, Current);
+	    this->GScore.Add(Neighbor, GScore);
+	    this->FScore.Add(Neighbor, this->GScore[Neighbor] + (Settings.EstimateWeight * HeuristicScore(Neighbor, Goal)));
 	}
 }
 
-void SVONPathFinder::BuildPath(TMap<SVONLink, SVONLink>& aCameFrom, SVONLink aCurrent, const FVector& aStartPos, const FVector& aTargetPos, FNavPathSharedPtr* oPath)
+void FSVONPathFinder::BuildPath(TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath)
 {
-	
-	FVector pos;
-
-	TArray<FVector> points;
-
-	if (!oPath || !oPath->IsValid())
+	FVector Location;
+	TArray<FVector> Points;
+	if (!OutPath || !OutPath->IsValid())
 		return;
 
-	while (aCameFrom.Contains(aCurrent) && !(aCurrent == aCameFrom[aCurrent]))
+	while (CameFrom.Contains(Current) && !(Current == CameFrom[Current]))
 	{
-		aCurrent = aCameFrom[aCurrent];
-		myVolume.GetLinkPosition(aCurrent, pos);
-		points.Add(pos);
-		
+		Current = CameFrom[Current];
+		myVolume.GetLinkLocation(Current, Location);
+		Points.Add(Location)
 	}
 
-	if (points.Num() > 1)
+	if (Points.Num() > 1)
 	{
-		points[0] = aTargetPos;
-		points[points.Num() - 1] = aStartPos;
+		Points[0] = TargetLocation;
+		Points[Points.Num() - 1] = StartLocation;
 	}
 
-	Smooth_Chaikin(points, mySettings.mySmoothingIterations);
+	Smooth_Chaikin(Points, Settings.SmoothingIterations);
 
-	for (int i = points.Num() - 1; i >= 0; i--)
-	{
-		oPath->Get()->GetPathPoints().Add(points[i]);
-	}
-	
-	
+	for (auto i = Points.Num() - 1; i >= 0; i--
+		OutPath->Get()->GetPathPoints().Add(Points[i])	
 }
 
-void SVONPathFinder::Smooth_Chaikin(TArray<FVector>& somePoints, int aNumIterations)
+void FSVONPathFinder::Smooth_Chaikin(TArray<FVector>& Points, int NumIterations)
 {
-	for (int i = 0; i < aNumIterations; i++)
+	for (auto i = 0; i < NumIterations; i++)
 	{
-		for (int j = 0; j < somePoints.Num() - 1; j += 2)
+		for (int j = 0; j < Points.Num() - 1; j += 2)
 		{
-			FVector start = somePoints[j];
-			FVector end = somePoints[j + 1];
+			FVector StartLocation = Points[j];
+			FVector EndLocation = Points[j + 1];
 			if (j > 0)
-				somePoints[j] = FMath::Lerp(start, end, 0.25f);
-			FVector secondVal = FMath::Lerp(start, end, 0.75f);
-			somePoints.Insert(secondVal, j + 1);
+                Points[j] = FMath::Lerp(StartLocation, EndLocation, 0.25f);
+
+			FVector SecondValue = FMath::Lerp(StartLocation, EndLocation, 0.75f);
+			Points.Insert(SecondValue, j + 1);
 		}
-		somePoints.RemoveAt(somePoints.Num() - 1);
+		Points.RemoveAt(Points.Num() - 1);
 	}
 }

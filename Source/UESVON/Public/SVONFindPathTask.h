@@ -2,43 +2,44 @@
 
 #include "Runtime/Core/Public/Async/AsyncWork.h"
 
-class FSVONFindPathTask : public FNonAbandonableTask
+class FSVONFindPathTask 
+    : public FNonAbandonableTask
 {
 	friend class FAutoDeleteAsyncTask<FSVONFindPathTask>;
 
 public:
-	FSVONFindPathTask(ASVONVolume& aVolume, UWorld* aWorld, const SVONLink aStart, const SVONLink aTarget, const FVector& aStartPos, const FVector& aTargetPos, FNavPathSharedPtr* oPath, TQueue<int>& aQueue, TArray<FVector>& aDebugOpenPoints) :
-		myVolume(aVolume),
-		myWorld(aWorld),
+	FSVONFindPathTask(ASVONVolume& aVolume, UWorld* aWorld, const FSVONLink aStart, const FSVONLink aTarget, const FVector& aStartPos, const FVector& aTargetPos, FNavPathSharedPtr* oPath, TQueue<int>& aQueue, TArray<FVector>& aDebugOpenPoints) :
+		Volume(aVolume),
+		World(aWorld),
 		myStart(aStart),
 		myTarget(aTarget),
 		myStartPos(aStartPos),
 		myTargetPos(aTargetPos),
-		myPath(oPath),
+		Path(oPath),
 		myOutQueue(aQueue),
 		myDebugOpenPoints(aDebugOpenPoints)
 	{}
 
 protected:
-	ASVONVolume& myVolume;
-	UWorld* myWorld;
+	ASVONVolume& Volume;
+	UWorld* World;
 
-	SVONLink myStart;
-	SVONLink myTarget;
+	FSVONLink myStart;
+	FSVONLink myTarget;
 	FVector myStartPos;
 	FVector myTargetPos;
-	FNavPathSharedPtr* myPath;
+	FNavPathSharedPtr* Path;
 
 	TQueue<int>& myOutQueue;
 	TArray<FVector>& myDebugOpenPoints;
 
 	void DoWork()
 	{
-		SVONPathFinderSettings settings;
+		FSVONPathFinderSettings settings;
 
-		SVONPathFinder pathFinder(myWorld, myVolume, settings);
+		FSVONPathFinder pathFinder(World, Volume, settings);
 
-		int result = pathFinder.FindPath(myStart, myTarget, myStartPos, myTargetPos, myPath);
+		int result = pathFinder.FindPath(myStart, myTarget, myStartPos, myTargetPos, Path);
 
 		myOutQueue.Enqueue(result);
 		

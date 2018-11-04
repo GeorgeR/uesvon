@@ -1,26 +1,24 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Volume.h"
+
 #include "SVONDefines.h"
 #include "SVONNode.h"
 #include "SVONLeafNode.h"
 #include "SVONData.h"
 #include "UESVON.h"
+
 #include "SVONVolume.generated.h"
 
-
-/**
- * 
- */
-UCLASS(hidecategories = (Tags, Cooking, Actor, HLOD, Mobile, LOD))
-class UESVON_API ASVONVolume : public AVolume
+UCLASS(HideCategories = (Tags, Cooking, Actor, HLOD, Mobile, LOD))
+class UESVON_API ASVONVolume 
+    : public AVolume
 {
-	GENERATED_UCLASS_BODY()
+	GENERATED_BODY()
 	
 public:
+    ASVONVolume();
 
 	virtual void BeginPlay() override;
 
@@ -28,6 +26,7 @@ public:
 	virtual void PostRegisterAllComponents() override;
 	virtual void PostUnregisterAllComponents() override;
 	//~ End AActor Interface
+
 #if WITH_EDITOR
 	//~ Begin UObject Interface
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -38,73 +37,77 @@ public:
 	//~ End UObject Interface
 #endif // WITH_EDITOR
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UESVON")
-	bool myShowVoxels = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UESVON")
-	bool myShowLeafVoxels = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UESVON")
-	bool myShowMortonCodes = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UESVON")
-	bool myShowNeighbourLinks = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UESVON")
-	bool myShowParentChildLinks = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UESVON")
-	int32 myVoxelPower = 3;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UESVON")
-	TEnumAsByte<ECollisionChannel> myCollisionChannel;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UESVON")
-	float myClearance = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	bool bShowVoxels = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	bool bShowLeafVoxels = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	bool bShowMortonCodes = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	bool bShowNeighbourLinks = false;
+	
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	bool bShowParentChildLinks = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	int32 VoxelPower = 3;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	TEnumAsByte<ECollisionChannel> CollisionChannel;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	float Clearance = 0.0f;
 
 	bool Generate();
 
-	const FVector& GetOrigin() const { return myOrigin; }
-	const FVector& GetExtent() const { return myExtent; }
-	const uint8 GetMyNumLayers() const { return myNumLayers; }
-	const TArray<SVONNode>& GetLayer(layerindex_t aLayer) const;
-	float GetVoxelSize(layerindex_t aLayer) const;
+	const FVector& GetOrigin() const { return Origin; }
+	const FVector& GetExtent() const { return Extent; }
+	const uint8 GetNumLayers() const { return NumLayers; }
+	const TArray<FSVONNode>& GetLayer(FLayerIndex Layer) const;
+	float GetVoxelSize(FLayerIndex Layer) const;
 
 	bool IsReadyForNavigation();
 	
-	bool GetLinkPosition(const SVONLink& aLink, FVector& oPosition) const;
-	bool GetNodePosition(layerindex_t aLayer, mortoncode_t aCode, FVector& oPosition) const;
-	const SVONNode& GetNode(const SVONLink& aLink) const;
-	const SVONLeafNode& GetLeafNode(nodeindex_t aIndex) const;
+	bool GetLinkLocation(const FSVONLink& Link, FVector& OutLocation) const;
+	bool GetNodeLocation(FLayerIndex Layer, FMortonCode Code, FVector& OutLocation) const;
+	const FSVONNode& GetNode(const FSVONLink& Link) const;
+	const FSVONLeafNode& GetLeafNode(FNodeIndex Index) const;
 
-	void GetLeafNeighbours(const SVONLink& aLink, TArray<SVONLink>& oNeighbours) const;
-	void GetNeighbours(const SVONLink& aLink, TArray<SVONLink>& oNeighbours) const;
+	void GetLeafNeighbors(const FSVONLink& Link, TArray<FSVONLink>& OutNeighbors) const;
+	void GetNeighbors(const FSVONLink& Link, TArray<FSVONLink>& OutNeighbors) const;
 
-	
 private:
-	bool myIsReadyForNavigation = false;
+	bool bIsReadyForNavigation = false;
 
-	FVector myOrigin;
-	FVector myExtent;
+	FVector Origin;
+	FVector Extent;
 
-	uint8 myNumLayers = 0;
+	uint8 NumLayers = 0;
 	
-	SVONData myData;
+	FSVONData Data;
 
 	// First pass rasterize results
-	TArray<TSet<mortoncode_t>> myBlockedIndices;
+	TArray<TSet<FMortonCode>> BlockedIndices;
 
-	TArray<SVONNode>& GetLayer(layerindex_t aLayer);
+	TArray<FSVONNode>& GetLayer(FLayerIndex Layer);
 
 	bool FirstPassRasterize();
-	void RasterizeLayer(layerindex_t aLayer);
+	void RasterizeLayer(FLayerIndex Layer);
 
+	int32 GetNodesInLayer(FLayerIndex Layer);
+	int32 GetNodesPerSide(FLayerIndex Layer);
 
-	int32 GetNodesInLayer(layerindex_t aLayer);
-	int32 GetNodesPerSide(layerindex_t aLayer);
+	bool GetIndexForCode(FLayerIndex Layer, FMortonCode Code, FNodeIndex& OutIndex) const;
 
+    void BuildNeighborLinks(FLayerIndex Layer);
+	bool FindLinkInDirection(FLayerIndex Layer, const FNodeIndex NodeIndex, uint8 Direction, FSVONLink& OutLinkToUpdate, FVector& OutStartLocationForDebug);
+	void RasterizeLeafNode(FVector& Origin, FNodeIndex LeafIndex);
+	bool SetNeighbor(const FLayerIndex Layer, const FNodeIndex ArrayIndex, const EDirection Direction);
 
-	bool GetIndexForCode(layerindex_t aLayer, mortoncode_t aCode, nodeindex_t& oIndex) const;
+	bool IsAnyMemberBlocked(FLayerIndex Layer, FMortonCode Code);
 
-	void BuildNeighbourLinks(layerindex_t aLayer);
-	bool FindLinkInDirection(layerindex_t aLayer, const nodeindex_t aNodeIndex, uint8 aDir, SVONLink& oLinkToUpdate, FVector& aStartPosForDebug);
-	void RasterizeLeafNode(FVector& aOrigin, nodeindex_t aLeafIndex);
-	bool SetNeighbour(const layerindex_t aLayer, const nodeindex_t aArrayIndex, const dir aDirection);
-
-	bool IsAnyMemberBlocked(layerindex_t aLayer, mortoncode_t aCode);
-
-	bool IsBlocked(const FVector& aPosition, const float aSize) const;
+	bool IsBlocked(const FVector& Location, const float Size) const;
 };

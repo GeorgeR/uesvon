@@ -1,12 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "SVONNode.h"
 #include "SVONLeafNode.h"
 
-struct SVONData
+struct FSVONData
 {
-	// SVO data
-	TArray<TArray<SVONNode>> myLayers;
-	TArray<SVONLeafNode> myLeafNodes;
+public:
+	TArray<TArray<FSVONNode>> Layer;
+	TArray<FSVONLeafNode> LeafNodes;
 };

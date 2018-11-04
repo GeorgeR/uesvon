@@ -2,33 +2,37 @@
 
 #include "CoreMinimal.h"
 
-typedef uint8 layerindex_t;
-typedef int32 nodeindex_t;
-typedef uint8 subnodeindex_t;
-typedef uint_fast64_t mortoncode_t;
-typedef uint_fast32_t posint_t;
+typedef uint8 FLayerIndex;
+typedef int32 FNodeIndex;
+typedef uint8 FSubNodeIndex;
+typedef uint_fast64_t FMortonCode;
+typedef uint_fast32_t FPosInt;
 
 UENUM(BlueprintType)		
 enum class EBuildTrigger : uint8
 {
-	OnEdit	UMETA(DisplayName = "On Edit"),
-	Manual 	UMETA(DisplayName = "Manual")
+	BTOnEdit	UMETA(DisplayName = "On Edit"),
+	BTManual 	UMETA(DisplayName = "Manual")
 };
 
-enum class dir : uint8
+enum class EDirection : uint8
 {
-	pX, nX, pY, nY, pZ, nZ
+	DPositiveX  UMETA(DisplayName = "+X"), 
+    DNegativeX  UMETA(DisplayName = "-X"),
+    DPositiveY  UMETA(DisplayName = "+Y"),
+    DNegativeY  UMETA(DisplayName = "-Y"),
+    DPositiveZ  UMETA(DisplayName = "+Z"),
+    DNegativeZ  UMETA(DisplayName = "-Z")
 };
 
 #define LEAF_LAYER_INDEX 14;
 
-class UESVON_API SVONStatics
+class UESVON_API FSVONStatics
 {
 public:
-	static const FIntVector dirs[];
-	static const nodeindex_t dirChildOffsets[6][4];
-	static const nodeindex_t dirLeafChildOffsets[6][16];
-	static const FColor myLayerColors[];
-	static const FColor myLinkColors[];
-
+	static const FIntVector Directions[];
+	static const FNodeIndex DirectionChildOffsets[6][4];
+	static const FNodeIndex DirectionLeafChildOffsets[6][16];
+	static const FColor LayerColors[];
+	static const FColor LinkColors[];
 };

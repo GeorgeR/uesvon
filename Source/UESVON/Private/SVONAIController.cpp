@@ -1,26 +1,21 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "SVONAIController.h"
+
 #include "VisualLogger.h"
-#include "AI/Navigation/NavigationSystem.h"
+#include "NavigationSystem.h"
 #include "SVONNavigationComponent.h"
 #include "Tasks/AITask.h"
 #include "Kismet/GameplayStatics.h"
 #include "DisplayDebugHelpers.h"
 
-
 DECLARE_CYCLE_STAT(TEXT("SVONMoveTo"), STAT_SVONMoveTo, STATGROUP_AI);
 
 DEFINE_LOG_CATEGORY(LogAINavigation);
 
-
-ASVONAIController::ASVONAIController(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
-	: Super(ObjectInitializer)
+ASVONAIController::ASVONAIController()
 {
-	
 	SVONNavComponent = CreateDefaultSubobject<USVONNavigationComponent>(TEXT("SVONNavigationComponent"));
-
-	myNavPath = MakeShareable<FNavigationPath>(new FNavigationPath());
+    
+	NavPath = MakeShareable<FNavigationPath>(new FNavigationPath());
 }
 
 FPathFollowingRequestResult ASVONAIController::MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath /*= nullptr*/)
@@ -62,9 +57,7 @@ FPathFollowingRequestResult ASVONAIController::MoveTo(const FAIMoveRequest& Move
 		bAlreadyAtGoal = bCanRequestMove && GetPathFollowingComponent()->HasReached(MoveRequest);
 	}
 	else
-	{
 		bAlreadyAtGoal = bCanRequestMove && GetPathFollowingComponent()->HasReached(MoveRequest);
-	}
 
 	if (bAlreadyAtGoal)
 	{
@@ -74,25 +67,22 @@ FPathFollowingRequestResult ASVONAIController::MoveTo(const FAIMoveRequest& Move
 	}
 	else if (bCanRequestMove)
 	{
-		SVONNavComponent->FindPathImmediate(GetPawn()->GetActorLocation(), MoveRequest.IsMoveToActorRequest() ? MoveRequest.GetGoalActor()->GetActorLocation() : MoveRequest.GetGoalLocation(), &myNavPath);
+		SVONNavComponent->FindPathImmediate(GetPawn()->GetActorLocation(), MoveRequest.IsMoveToActorRequest() ? MoveRequest.GetGoalActor()->GetActorLocation() : MoveRequest.GetGoalLocation(), &NavPath);
 
-		const FAIRequestID RequestID = myNavPath.IsValid() ? RequestMove(MoveRequest, myNavPath) : FAIRequestID::InvalidRequest;
+		const FAIRequestID RequestID = NavPath.IsValid() ? RequestMove(MoveRequest, NavPath) : FAIRequestID::InvalidRequest;
 
 		if(RequestID.IsValid())
 		{
 			UE_VLOG(this, LogAINavigation, Log, TEXT("SVON Pathfinding successful, moving"));
-			*OutPath = myNavPath;
+			*OutPath = NavPath;
 			bAllowStrafe = MoveRequest.CanStrafe();
 			ResultData.MoveId = RequestID;
 			ResultData.Code = EPathFollowingRequestResult::RequestSuccessful;
-		}
-		
+		}	
 	}
 
 	if (ResultData.Code == EPathFollowingRequestResult::Failed)
-	{
 		ResultData.MoveId = GetPathFollowingComponent()->RequestMoveWithImmediateFinish(EPathFollowingResult::Invalid);
-	}
 
 	return ResultData;
 }

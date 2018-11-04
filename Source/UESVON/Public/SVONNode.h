@@ -1,22 +1,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "SVONLink.h"
 #include "SVONDefines.h"
 
-struct UESVON_API SVONNode
+struct UESVON_API FSVONNode
 {
-	mortoncode_t myCode;
+public:
+	FMortonCode Code;
 
-	SVONLink myParent;
-	SVONLink myFirstChild;
+	FSVONLink Parent;
+	FSVONLink FirstChild;
 
-	SVONLink myNeighbours[6];
+	FSVONLink Neighbors[6];
 
-	SVONNode() :
-		myParent(SVONLink::GetInvalidLink()),
-		myFirstChild(SVONLink::GetInvalidLink()) {}
+	FSVONNode() 
+        : Parent(FSVONLink::GetInvalidLink()),
+        FirstChild(FSVONLink::GetInvalidLink()) { }
 
-	bool HasChildren() const { return myFirstChild.IsValid(); }
-
+	FORCEINLINE bool HasChildren() const { return FirstChild.IsValid(); }
 };

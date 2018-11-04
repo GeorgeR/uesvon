@@ -1,44 +1,49 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+
 #include "SVONPath.h"
 #include "SVONLink.h"
+
 #include "SVONNavigationComponent.generated.h"
 
 class ASVONVolume;
-struct SVONLink;
+struct FSVONLink;
 
-
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class UESVON_API USVONNavigationComponent : public UActorComponent
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+class UESVON_API USVONNavigationComponent 
+    : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Debug")
-	bool DebugPrintCurrentPosition;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Debug")
-	bool DebugPrintMortonCodes;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Debug")
-	bool DebugDrawOpenNodes = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Debug")
+	bool bDebugPrintCurrentPosition;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Heuristics")
-	bool UseUnitCost = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Heuristics")
-	float UnitCost = 10.f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Heuristics")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Debug")
+	bool bDebugPrintMortonCodes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Debug")
+	bool bDebugDrawOpenNodes = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Heuristics")
+	bool bUseUnitCost = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Heuristics")
+	float UnitCost = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Heuristics")
 	float EstimateWeight = 1.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Heuristics")
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Heuristics")
 	float NodeSizeCompensation = 1.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Heuristics")
-	ESVONPathCostType PathCostType = ESVONPathCostType::EUCLIDEAN;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON|Heuristics")
+	ESVONPathCostType PathCostType = ESVONPathCostType::SPCT_Euclidean;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVO Navigation | Smoothing")
-	int SmoothingIterations = 0;
-
-
+	int32 SmoothingIterations = 0;
 
 	// Sets default values for this component's properties
 	USVONNavigationComponent();
@@ -48,7 +53,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	// The current navigation volume
-	ASVONVolume* myCurrentNavVolume;
+	ASVONVolume* CurrentNavVolume;
 
 	// Do I have a valid nav volume ready?
 	bool HasNavVolume();
@@ -57,27 +62,25 @@ protected:
 	bool FindVolume();
 
 	// Print current layer/morton code information
-	void DebugLocalPosition(FVector& aPosition);
+	void DebugLocalLocation(FVector& aPosition);
 
-	SVONLink myLastLocation;
+	FSVONLink LastLocation;
 
-	TQueue<int> myJobQueue;
-	TArray<FVector> myDebugPoints;
+	TQueue<int32> JobQueue;
+	TArray<FVector> DebugPoints;
 
-	bool myIsBusy;
+	bool bIsBusy;
 
-	int myPointDebugIndex;
+	int32 PointDebugIndex;
 
 public:	
-	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	// Get a Nav position
-	SVONLink GetNavPosition(FVector& aPosition);
+	// Get a Nav Location
+	FSVONLink GetNavLocation(FVector& OutLocation);
 
 	/* This method isn't hooked up at the moment, pending integration with existing systems */
-	bool FindPathAsync(const FVector& aStartPosition, const FVector& aTargetPosition, FNavPathSharedPtr* oNavPath);
+	bool FindPathAsync(const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutNavPath);
 
-	bool FindPathImmediate(const FVector& aStartPosition, const FVector& aTargetPosition, FNavPathSharedPtr* oNavPath);
-
+	bool FindPathImmediate(const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutNavPath);
 };
