@@ -61,7 +61,7 @@ void USVONNavigationComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	else if (CurrentNavVolume->IsReadyForNavigation() && !bIsBusy)
 	{
 		FVector Location = GetOwner()->GetActorLocation();
-		if (DebugPrintMortonCodes)
+		if (bDebugPrintMortonCodes)
 			DebugLocalLocation(Location);
 
 		auto Link = GetNavLocation(Location);
@@ -125,7 +125,7 @@ FSVONLink USVONNavigationComponent::GetNavLocation(FVector& OutLocation)
 
 			bool bIsValid = CurrentNavVolume->GetLinkLocation(NavLink, CurrentNodePosition);
 
-			DrawDebugLine(GetWorld(), GetOwner()->GetActorLocation(), CurrentNodePosition, isValid ? FColor::Green : FColor::Red, false, -1.f, 0, 10.f);
+			DrawDebugLine(GetWorld(), GetOwner()->GetActorLocation(), CurrentNodePosition, bIsValid ? FColor::Green : FColor::Red, false, -1.f, 0, 10.f);
 			DrawDebugString(GetWorld(), GetOwner()->GetActorLocation() + FVector(0.f, 0.f, -50.f), NavLink.ToString(), nullptr, FColor::Yellow, 0.01f);
 		}	
 	}
@@ -149,7 +149,7 @@ bool USVONNavigationComponent::FindPathAsync(const FVector& StartLocation, const
 			return false;
 		}
 
-		if (!FSVONMediator::GetLinkFromLocation(aTargetPosition, *CurrentNavVolume, targetNavLink))
+		if (!FSVONMediator::GetLinkFromLocation(TargetLocation, *CurrentNavVolume, TargetNavLink))
 		{
 			UE_LOG(UESVON, Display, TEXT("Path finder failed to find target nav link"));
 			return false;

@@ -99,8 +99,8 @@ bool FSVONMediator::GetLinkFromLocation(const FVector& Location, const ASVONVolu
 				}
 				
 				// If we've got here, the current Node has a child, and isn't a Leaf, so lets go down...
-				LayerIndex = Layer[j].FirstChild.GetLayerIndex();
-				NodeIndex = Layer[j].FirstChild.GetNodeIndex();
+                LayerIndex = Layer[j].FirstChild.LayerIndex;
+				NodeIndex = Layer[j].FirstChild.NodeIndex;
 
 				break; //stop iterating this Layer
 			}
