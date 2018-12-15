@@ -1,4 +1,5 @@
 #include "SVONPath.h"
+#include <DrawDebugHelpers.h>
 
 void FSVONPath::AddPoint(const FVector& Point)
 {

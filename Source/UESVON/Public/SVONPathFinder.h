@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SVONPath.h"
+#include <NavigationData.h>
+#include "SVONLink.h"
 
 struct FSVONPath;
 class ASVONVolume;
-struct FSVONLink;
-
-struct FNavigationPath;
 
 struct FSVONPathFinderSettings
 {

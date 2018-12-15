@@ -10,6 +10,7 @@
 #include "DrawDebugHelpers.h"
 #include "NavigationData.h"
 #include "Runtime/Engine/Classes/Components/LineBatchComponent.h "
+#include "SVONMediator.h"
 
 // Sets default values for this component's properties
 USVONNavigationComponent::USVONNavigationComponent()

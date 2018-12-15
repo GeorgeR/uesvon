@@ -1,7 +1,7 @@
 #include "SVONPathFinder.h"
 
-#include "SVONLink.h"
 #include "NavigationData.h"
+#include "SVONVolume.h"
 
 int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath)
 {
