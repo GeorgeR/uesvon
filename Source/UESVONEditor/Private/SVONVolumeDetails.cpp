@@ -1,6 +1,6 @@
 #include "SVONVolumeDetails.h"
 
-#include "SVONVolume.h"
+#include "SVONVolumeActor.h"
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
 #include "DetailCategoryBuilder.h"
@@ -20,7 +20,7 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 	// Defaults only show tick properties
 	if (PrimaryTickProperty->IsValidHandle() && DetailBuilder.HasClassDefaultObject())
 	{
-		auto& TickCategory = DetailBuilder.EditCategory("ComponentTick");
+		auto& TickCategory = DetailBuilder.EditCategory(TEXT("ComponentTick"));
 
 		TickCategory.AddProperty(PrimaryTickProperty->GetChildHandle(GET_MEMBER_NAME_CHECKED(FTickFunction, bStartWithTickEnabled)));
 		TickCategory.AddProperty(PrimaryTickProperty->GetChildHandle(GET_MEMBER_NAME_CHECKED(FTickFunction, TickInterval)));
@@ -31,16 +31,19 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 
 	PrimaryTickProperty->MarkHiddenByCustomization();
 
-	auto& NavigationCategory = DetailBuilder.EditCategory("SVON");
+	auto& NavigationCategory = DetailBuilder.EditCategory(TEXT("SVON"));
 
-	auto ShowVoxelProperty = DetailBuilder.GetProperty("bShowVoxels");
-	auto ShowVoxelLeafProperty = DetailBuilder.GetProperty("bShowLeafVoxels");
-	auto ShowMortonCodesProperty = DetailBuilder.GetProperty("bShowMortonCodes");
-	auto ShowNeighborLinksProperty = DetailBuilder.GetProperty("bShowNeighborLinks");
-	auto ShowParentChildLinksProperty = DetailBuilder.GetProperty("myShowParentChildLinks");
-	auto VoxelPowerProperty = DetailBuilder.GetProperty("VoxelPower");
-	auto CollisionChannelProperty = DetailBuilder.GetProperty("CollisionChannel");
-	auto ClearanceProperty = DetailBuilder.GetProperty("Clearance");
+	auto ShowVoxelProperty = DetailBuilder.GetProperty(TEXT("bShowVoxels"));
+	auto ShowVoxelLeafProperty = DetailBuilder.GetProperty(TEXT("bShowLeafVoxels"));
+	auto ShowMortonCodesProperty = DetailBuilder.GetProperty(TEXT("bShowMortonCodes"));
+	auto ShowNeighborLinksProperty = DetailBuilder.GetProperty(TEXT("bShowNeighborLinks"));
+	auto ShowParentChildLinksProperty = DetailBuilder.GetProperty(TEXT("bShowParentChildLinks"));
+	auto VoxelPowerProperty = DetailBuilder.GetProperty(TEXT("VoxelPower"));
+	auto CollisionChannelProperty = DetailBuilder.GetProperty(TEXT("CollisionChannel"));
+	auto ClearanceProperty = DetailBuilder.GetProperty(TEXT("Clearance"));
+	auto GenerationStrategyProperty = DetailBuilder.GetProperty(TEXT("GenerationStrategy"));
+	auto NumLayersProperty = DetailBuilder.GetProperty(TEXT("NumLayers"));
+	auto NumBytesProperty = DetailBuilder.GetProperty(TEXT("NumBytes"));
 	
 	ShowVoxelProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Debug Voxels", "Debug Voxels"));
 	ShowVoxelLeafProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Debug Leaf Voxels", "Debug Leaf Voxels"));
@@ -48,14 +51,20 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 	ShowNeighborLinksProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Debug Links", "Debug Links"));
 	ShowParentChildLinksProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Parent Child Links", "Parent Child Links"));
 	VoxelPowerProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Layers", "Layers"));
-	VoxelPowerProperty->SetInstanceMetaData("UIMin", TEXT("1"));
-	VoxelPowerProperty->SetInstanceMetaData("UIMax", TEXT("12"));
+	VoxelPowerProperty->SetInstanceMetaData(TEXT("UIMin"), TEXT("1"));
+	VoxelPowerProperty->SetInstanceMetaData(TEXT("UIMax"), TEXT("12"));
 	CollisionChannelProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Collision Channel", "Collision Channel"));
 	ClearanceProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Clearance", "Clearance"));
+	GenerationStrategyProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Generation Strategy", "Generation Strategy"));
+	NumLayersProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Num Layers", "Num Layers"));
+	NumBytesProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Num Bytes", "Num Bytes"));
 
 	NavigationCategory.AddProperty(VoxelPowerProperty);
 	NavigationCategory.AddProperty(CollisionChannelProperty);
 	NavigationCategory.AddProperty(ClearanceProperty);
+	NavigationCategory.AddProperty(GenerationStrategyProperty);
+	NavigationCategory.AddProperty(NumLayersProperty);
+	NavigationCategory.AddProperty(NumBytesProperty);
 
 	const TArray<TWeakObjectPtr<UObject>>& SelectedObjects = DetailBuilder.GetSelectedObjects();
 
@@ -64,7 +73,7 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 		const TWeakObjectPtr<UObject>& CurrentObject = SelectedObjects[ObjectIndex];
 		if (CurrentObject.IsValid())
 		{
-			auto CurrentVolume = Cast<ASVONVolume>(CurrentObject.Get());
+			auto CurrentVolume = Cast<ASVONVolumeActor>(CurrentObject.Get());
 			if (CurrentVolume != nullptr)
 			{
 				Volume = CurrentVolume;
@@ -73,7 +82,7 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 		}
 	}
 
-	DetailBuilder.EditCategory("SVON")
+	DetailBuilder.EditCategory(TEXT("SVON"))
 		.AddCustomRow(NSLOCTEXT("SVO Volume", "Generate", "Generate"))
 		.NameContent()
 		[

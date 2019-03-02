@@ -1,12 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SVONPath.h"
-#include <NavigationData.h>
+
+#include "SVONTypes.h"
+#include "SVONNavigationPath.h"
 #include "SVONLink.h"
 
-struct FSVONPath;
-class ASVONVolume;
+struct FSVONNavigationPath;
+class ASVONVolumeActor;
 
 struct FSVONPathFinderSettings
 {
@@ -20,19 +21,19 @@ struct FSVONPathFinderSettings
 	TArray<FVector> DebugPoints;
 
 	FSVONPathFinderSettings()
-		: bDebugOpenNodes(false)
-		, bUseUnitCost(false)
-		, UnitCost(1.0f)
-		, WeightEstimate(1.0f)
-		, NodeSizeCompensation(1.0f)
-		, SmoothingIterations(0.f)
-		, PathCostType(ESVONPathCostType::SPCT_Euclidean) {}
+		: bDebugOpenNodes(false),
+		bUseUnitCost(false),
+		UnitCost(1.0f),
+		WeightEstimate(1.0f),
+		NodeSizeCompensation(1.0f),
+		SmoothingIterations(0.f),
+		PathCostType(ESVONPathCostType::SPCT_Euclidean) {}
 };
 
 class UESVON_API FSVONPathFinder
 {
 public:
-	FSVONPathFinder(UWorld* World, const ASVONVolume& Volume, FSVONPathFinderSettings& Settings)
+	FSVONPathFinder(UWorld* World, const ASVONVolumeActor& Volume, FSVONPathFinderSettings& Settings)
 		: World(World),
 		Volume(Volume),
 		Settings(Settings) { };
@@ -40,16 +41,12 @@ public:
 	~FSVONPathFinder() { };
 
 	/* Performs an A* search from start to target navlink */
-	int FindPath(const FSVONLink& Start, const FSVONLink& Target, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath);
+	int32 FindPath(const FSVONLink& Start, const FSVONLink& Target, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath);
 
-	FORCEINLINE const FSVONPath& GetPath() const { return Path; }
+	//FORCEINLINE const FSVONNavigationPath& GetPath() const { return Path; }
 	//const FNavigationPath& GetNavPath();  
 
 private:
-	FSVONPath Path;
-
-	FNavigationPath NavPath;
-
 	TArray<FSVONLink> OpenSet;
 	TSet<FSVONLink> ClosedSet;
 
@@ -58,10 +55,11 @@ private:
 	TMap<FSVONLink, float> GScore;
 	TMap<FSVONLink, float> FScore;
 
+	FSVONLink Start;
 	FSVONLink Current;
 	FSVONLink Goal;
 
-	const ASVONVolume& Volume;
+	const ASVONVolumeActor& Volume;
 
 	FSVONPathFinderSettings& Settings;
 
@@ -76,7 +74,7 @@ private:
 	void ProcessLink(const FSVONLink& Neighbor);
 
 	/* Constructs the path by navigating back through our CameFrom map */
-	void BuildPath(TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath);
+	void BuildPath(TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath);
 
-	void Smooth_Chaikin(TArray<FVector>& somePoints, int aNumIterations);
+	/*void Smooth_Chaikin(TArray<FVector>& somePoints, int aNumIterations);*/
 };

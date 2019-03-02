@@ -9,16 +9,23 @@
 #include "SVONData.h"
 #include "UESVON.h"
 
-#include "SVONVolume.generated.h"
+#include "SVONVolumeActor.generated.h"
+
+UENUM(BlueprintType)
+enum class ESVOGenerationStrategy : uint8
+{
+	SGS_UseBaked				UMETA(DisplayName = "Use Baked"),
+	SGS_GenerateOnBeginPlay		UMETA(DisplayName = "Generate on BeginPlay")
+};
 
 UCLASS(HideCategories = (Tags, Cooking, Actor, HLOD, Mobile, LOD))
-class UESVON_API ASVONVolume 
+class UESVON_API ASVONVolumeActor 
     : public AVolume
 {
 	GENERATED_BODY()
 	
 public:
-    ASVONVolume();
+    ASVONVolumeActor();
 
 	virtual void BeginPlay() override;
 
@@ -36,6 +43,8 @@ public:
 	bool ShouldTickIfViewportsOnly() const override { return true; }
 	//~ End UObject Interface
 #endif // WITH_EDITOR
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	float DebugDistance = 5000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
 	bool bShowVoxels = false;
@@ -61,6 +70,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
 	float Clearance = 0.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	ESVOGenerationStrategy GenerationStrategy = ESVOGenerationStrategy::SGS_UseBaked;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	uint8 NumLayers = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	int32 NumBytes;
+
 	bool Generate();
 
 	const FVector& GetOrigin() const { return Origin; }
@@ -79,20 +97,23 @@ public:
 	void GetLeafNeighbors(const FSVONLink& Link, TArray<FSVONLink>& OutNeighbors) const;
 	void GetNeighbors(const FSVONLink& Link, TArray<FSVONLink>& OutNeighbors) const;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 private:
 	bool bIsReadyForNavigation = false;
 
 	FVector Origin;
 	FVector Extent;
+	FVector DebugLocation;
 
-	uint8 NumLayers = 0;
-	
 	FSVONData Data;
 
 	// First pass rasterize results
 	TArray<TSet<FMortonCode>> BlockedIndices;
 
 	TArray<FSVONNode>& GetLayer(FLayerIndex Layer);
+
+	void SetupVolume();
 
 	bool FirstPassRasterize();
 	void RasterizeLayer(FLayerIndex Layer);
@@ -110,4 +131,6 @@ private:
 	bool IsAnyMemberBlocked(FLayerIndex Layer, FMortonCode Code);
 
 	bool IsBlocked(const FVector& Location, const float Size) const;
+
+	bool IsInDebugRange(const FVector& Location) const;
 };

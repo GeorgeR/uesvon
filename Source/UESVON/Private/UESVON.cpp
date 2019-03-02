@@ -1,8 +1,9 @@
-// Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
-
 #include "UESVON.h"
 
+#if WITH_EDITOR
 DEFINE_LOG_CATEGORY(UESVON);
+DEFINE_LOG_CATEGORY(VUESVON);
+#endif
 
 #define LOCTEXT_NAMESPACE "FUESVONModule"
 

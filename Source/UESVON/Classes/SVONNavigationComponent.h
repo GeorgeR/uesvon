@@ -2,13 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-
-#include "SVONPath.h"
+#include "SVONNavigationPath.h"
 #include "SVONLink.h"
+#include "SVONTypes.h"
 
 #include "SVONNavigationComponent.generated.h"
 
-class ASVONVolume;
+class ASVONVolumeActor;
 struct FSVONLink;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -53,7 +53,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	// The current navigation volume
-	ASVONVolume* CurrentNavVolume;
+	ASVONVolumeActor* CurrentNavVolume;
 
 	// Do I have a valid nav volume ready?
 	bool HasNavVolume();
@@ -64,6 +64,8 @@ protected:
 	// Print current layer/morton Code information
 	void DebugLocalLocation(FVector& aPosition);
 
+	FSVONNavPathSharedPtr SVONPath;
+
 	FSVONLink LastLocation;
 
 	TQueue<int32> JobQueue;
@@ -73,14 +75,20 @@ protected:
 
 	int32 PointDebugIndex;
 
-public:	
+public:
+	virtual FVector GetPawnLocation();
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	// Get a Nav Location
 	FSVONLink GetNavLocation(FVector& OutLocation);
 
-	/* This method isn't hooked up at the moment, pending integration with existing systems */
-	bool FindPathAsync(const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutNavPath);
+	const ASVONVolumeActor* GetCurrentVolume() const { return CurrentNavVolume; }
 
-	bool FindPathImmediate(const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutNavPath);
+	/* This method isn't hooked up at the moment, pending integration with existing systems */
+	bool FindPathAsync(const FVector& StartLocation, const FVector& TargetLocation, FThreadSafeBool& CompleteFlag, FSVONNavPathSharedPtr* OutNavPath);
+
+	bool FindPathImmediate(const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutNavPath);
+
+	FSVONNavPathSharedPtr& GetPath() { return SVONPath; }
 };

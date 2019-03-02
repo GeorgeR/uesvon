@@ -1,9 +1,11 @@
 #include "SVONPathFinder.h"
 
 #include "NavigationData.h"
-#include "SVONVolume.h"
 
-int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath)
+#include "SVONVolumeActor.h"
+#include "SVONNavigationPath.h"
+
+int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath)
 {
 	OpenSet.Empty();
 	ClosedSet.Empty();
@@ -12,6 +14,7 @@ int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, c
 	GScore.Empty();
 	Current = FSVONLink();
 	this->Goal = Goal;
+	this->Start = Start;
 
     OpenSet.Add(Start);
 	CameFrom.Add(Start, Start);
@@ -37,7 +40,9 @@ int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, c
 		if (Current == Goal)
 		{
 			BuildPath(CameFrom, Current, StartLocation, TargetLocation, OutPath);
+#if WITH_EDITOR
 			UE_LOG(UESVON, Display, TEXT("Pathfinding complete, iterations : %i"), NumIterations);
+#endif
 			return 1;
 		}
 
@@ -55,7 +60,9 @@ int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, c
 		NumIterations++;
 	}
 
+#if WITH_EDITOR
 	UE_LOG(UESVON, Display, TEXT("Pathfinding failed, iterations : %i"), NumIterations);
+#endif
 
 	return 0;
 }
@@ -140,46 +147,66 @@ void FSVONPathFinder::ProcessLink(const FSVONLink& Neighbor)
 	}
 }
 
-void FSVONPathFinder::BuildPath(TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutPath)
+void FSVONPathFinder::BuildPath(TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath)
 {
-	FVector Location;
-	TArray<FVector> Points;
+	FSVONPathPoint Point;
+	TArray<FSVONPathPoint> Points;
 	if (!OutPath || !OutPath->IsValid())
 		return;
 
 	while (CameFrom.Contains(Current) && !(Current == CameFrom[Current]))
 	{
 		Current = CameFrom[Current];
-		Volume.GetLinkLocation(Current, Location);
-        Points.Add(Location);
+		Volume.GetLinkLocation(Current, Point.Location);
+        Points.Add(Point);
+		const auto& Node = Volume.GetNode(Current);
+		if (Current.GetLayerIndex() == 0)
+		{
+			if (!Node.HasChildren())
+				Points[Points.Num() - 1].Layer = 1;
+			else
+				Points[Points.Num() - 1].Layer = 0;
+		}
+		else
+		{
+			Points[Points.Num() - 1].Layer = Current.GetLayerIndex() + 1;
+		}
 	}
 
 	if (Points.Num() > 1)
 	{
-		Points[0] = TargetLocation;
-		Points[Points.Num() - 1] = StartLocation;
+		Points[0].Location = TargetLocation;
+		Points[Points.Num() - 1].Location = StartLocation;
+	}
+	else
+	{
+		if (Points.Num() == 0)
+			Points.Emplace();
+
+		Points[0].Location = TargetLocation;
+		Points.Emplace(StartLocation, Start.GetLayerIndex());
 	}
 
-	Smooth_Chaikin(Points, Settings.SmoothingIterations);
+	//Smooth_Chaikin(Points, Settings.SmoothingIterations);
 
     for (auto i = Points.Num() - 1; i >= 0; i--)
         OutPath->Get()->GetPathPoints().Add(Points[i]);
 }
 
-void FSVONPathFinder::Smooth_Chaikin(TArray<FVector>& Points, int NumIterations)
-{
-	for (auto i = 0; i < NumIterations; i++)
-	{
-		for (int j = 0; j < Points.Num() - 1; j += 2)
-		{
-			FVector StartLocation = Points[j];
-			FVector EndLocation = Points[j + 1];
-			if (j > 0)
-                Points[j] = FMath::Lerp(StartLocation, EndLocation, 0.25f);
-
-			FVector SecondValue = FMath::Lerp(StartLocation, EndLocation, 0.75f);
-			Points.Insert(SecondValue, j + 1);
-		}
-		Points.RemoveAt(Points.Num() - 1);
-	}
-}
+//void FSVONPathFinder::Smooth_Chaikin(TArray<FVector>& Points, int NumIterations)
+//{
+//	for (auto i = 0; i < NumIterations; i++)
+//	{
+//		for (int j = 0; j < Points.Num() - 1; j += 2)
+//		{
+//			FVector StartLocation = Points[j];
+//			FVector EndLocation = Points[j + 1];
+//			if (j > 0)
+//                Points[j] = FMath::Lerp(StartLocation, EndLocation, 0.25f);
+//
+//			FVector SecondValue = FMath::Lerp(StartLocation, EndLocation, 0.75f);
+//			Points.Insert(SecondValue, j + 1);
+//		}
+//		Points.RemoveAt(Points.Num() - 1);
+//	}
+//}

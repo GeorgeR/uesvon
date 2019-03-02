@@ -1,6 +1,13 @@
 #pragma once
 
-#include "Runtime/Core/Public/Async/AsyncWork.h"
+#include "Async/AsyncWork.h"
+#include "SVONLink.h"
+#include "SVONTypes.h"
+#include "SVONPathFinder.h"
+#include "ThreadSafeBool.h"
+
+class ASVONVolumeActor;
+struct FSVONPathFinderSettings;
 
 class FSVONFindPathTask 
     : public FNonAbandonableTask
@@ -8,45 +15,38 @@ class FSVONFindPathTask
 	friend class FAutoDeleteAsyncTask<FSVONFindPathTask>;
 
 public:
-	FSVONFindPathTask(ASVONVolume& aVolume, UWorld* aWorld, const FSVONLink aStart, const FSVONLink aTarget, const FVector& aStartPos, const FVector& aTargetPos, FNavPathSharedPtr* oPath, TQueue<int>& aQueue, TArray<FVector>& aDebugOpenPoints) :
-		Volume(aVolume),
-		World(aWorld),
-		myStart(aStart),
-		myTarget(aTarget),
-		myStartPos(aStartPos),
-		myTargetPos(aTargetPos),
-		Path(oPath),
-		myOutQueue(aQueue),
-		myDebugOpenPoints(aDebugOpenPoints)
-	{}
+	FSVONFindPathTask(ASVONVolumeActor& Volume, FSVONPathFinderSettings& Settings, UWorld* World,
+		const FSVONLink Start, const FSVONLink Target,
+		const FVector& StartLocation, const FVector& TargetLocation,
+		FSVONNavPathSharedPtr* Path, FThreadSafeBool& CompleteFlag, TArray<FVector>& DebugOpenPoints)
+		: Volume(Volume),
+		Settings(Settings),
+			World(World),
+			Start(Start),
+			Target(Target),
+			StartLocation(StartLocation),
+			TargetLocation(TargetLocation),
+			Path(Path),
+			CompleteFlag(CompleteFlag),
+			DebugOpenPoints(DebugOpenPoints) { }
 
 protected:
-	ASVONVolume& Volume;
+	ASVONVolumeActor& Volume;
+	FSVONPathFinderSettings Settings;
 	UWorld* World;
 
-	FSVONLink myStart;
-	FSVONLink myTarget;
-	FVector myStartPos;
-	FVector myTargetPos;
-	FNavPathSharedPtr* Path;
+	FSVONLink Start;
+	FSVONLink Target;
+	FVector StartLocation;
+	FVector TargetLocation;
+	FSVONNavPathSharedPtr* Path;
 
-	TQueue<int>& myOutQueue;
-	TArray<FVector>& myDebugOpenPoints;
+	FThreadSafeBool& CompleteFlag;
+	TArray<FVector>& DebugOpenPoints;
 
-	void DoWork()
-	{
-		FSVONPathFinderSettings settings;
-
-		FSVONPathFinder pathFinder(World, Volume, settings);
-
-		int result = pathFinder.FindPath(myStart, myTarget, myStartPos, myTargetPos, Path);
-
-		myOutQueue.Enqueue(result);
-		
-	}
+	void DoWork();
 
 	// This next section of Code needs to be here.  Not important as to why.
-
 	FORCEINLINE TStatId GetStatId() const
 	{
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSVONFindPathTask, STATGROUP_ThreadPoolAsyncTasks);

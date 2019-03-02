@@ -1,10 +1,12 @@
 #include "SVONMediator.h"
+
 #include "CoreMinimal.h"
-#include "SVONVolume.h"
-#include "SVONLink.h"
 #include "DrawDebugHelpers.h"
 
-bool FSVONMediator::GetLinkFromLocation(const FVector& Location, const ASVONVolume& Volume, FSVONLink& OutLink)
+#include "SVONVolumeActor.h"
+#include "SVONLink.h"
+
+bool FSVONMediator::GetLinkFromLocation(const FVector& Location, const ASVONVolumeActor& Volume, FSVONLink& OutLink)
 {
 	// Location is outside the volume, no can do
 	if (!Volume.EncompassesPoint(Location))
@@ -110,7 +112,7 @@ bool FSVONMediator::GetLinkFromLocation(const FVector& Location, const ASVONVolu
 	return false;
 }
 
-void FSVONMediator::GetVolumeXYZ(const FVector& Location, const ASVONVolume& Volume, const int Layer, FIntVector& OutXYZ)
+void FSVONMediator::GetVolumeXYZ(const FVector& Location, const ASVONVolumeActor& Volume, const int Layer, FIntVector& OutXYZ)
 {
 	auto Box = Volume.GetComponentsBoundingBox(true);
 

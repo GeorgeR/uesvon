@@ -21,3 +21,15 @@ public:
 
 	FORCEINLINE bool HasChildren() const { return FirstChild.IsValid(); }
 };
+
+FORCEINLINE FArchive& operator<<(FArchive& Ar, FSVONNode& Node)
+{
+	Ar << Node.Code;
+	Ar << Node.Parent;
+	Ar << Node.FirstChild;
+
+	for (auto i = 0; i < 6; i++)
+		Ar << Node.Neighbors[i];
+
+	return Ar;
+}

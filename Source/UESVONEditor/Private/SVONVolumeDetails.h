@@ -4,7 +4,7 @@
 #include "IDetailCustomization.h"
 
 class IDetailLayoutBuilder;
-class ASVONVolume;
+class ASVONVolumeActor;
 
 class FSVONVolumeDetails 
     : public IDetailCustomization
@@ -19,5 +19,5 @@ public:
 	FReply OnUpdateVolume();
 
 private:
-	TWeakObjectPtr<ASVONVolume> Volume;
+	TWeakObjectPtr<ASVONVolumeActor> Volume;
 };

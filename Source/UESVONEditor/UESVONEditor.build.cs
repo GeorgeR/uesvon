@@ -1,21 +1,46 @@
 using UnrealBuildTool;
+using System.IO;
 
 public class UESVONEditor : ModuleRules
 {
 	public UESVONEditor(ReadOnlyTargetRules Target) : base(Target)
     {
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-    PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine",  "UESVON", "InputCore"});
+        if (Target.Version.MinorVersion <= 19)
+        {
+            PublicIncludePaths.AddRange(
+                new string[] {
+                    Path.Combine(ModuleDirectory, "Public")
+                });
 
-    PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "PropertyEditor", "EditorStyle", "UnrealEd", "GraphEditor", "BlueprintGraph" });
-	
-	// PrivateIncludePaths.AddRange(new string[] { "UESVONEditor/Private"	} );
-	
-	// PrivateIncludePaths.AddRange(new string[] { "UESVONEditor/Public" } );
+            PrivateIncludePaths.AddRange(
+                new string[] {
+                    Path.Combine(ModuleDirectory, "Private")
+                });
+        }
 
-    // PublicIncludePaths.AddRange(new string[] { "UESVONEditor/Public" });
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Core",
+                "CoreUObject",
+                "Engine",
+                "InputCore",
 
-    PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+                "UESVON"
+            });
 
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "BlueprintGraph",
+                "EditorStyle",
+                "GraphEditor",
+                "PropertyEditor",
+                "Slate",
+                "SlateCore",
+                "UnrealEd"
+            });
     }
 };

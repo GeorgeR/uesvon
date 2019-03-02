@@ -41,3 +41,9 @@ public:
 		return VoxelGrid == 0;
 	}
 };
+
+FORCEINLINE FArchive& operator<<(FArchive& Ar, FSVONLeafNode& Node)
+{
+	Ar << Node.VoxelGrid;
+	return Ar;
+}

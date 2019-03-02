@@ -2,14 +2,15 @@
 
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
-#include "SVONVolume.h"
-#include "SVONLink.h"
-#include "SVONPathFinder.h"
-#include "SVONPath.h"
-#include "SVONFindPathTask.h"
 #include "DrawDebugHelpers.h"
 #include "NavigationData.h"
-#include "Runtime/Engine/Classes/Components/LineBatchComponent.h "
+#include "Components/LineBatchComponent.h "
+
+#include "SVONVolumeActor.h"
+#include "SVONLink.h"
+#include "SVONPathFinder.h"
+#include "SVONNavigationPath.h"
+#include "SVONFindPathTask.h"
 #include "SVONMediator.h"
 
 // Sets default values for this component's properties
@@ -20,6 +21,8 @@ USVONNavigationComponent::USVONNavigationComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 	LastLocation = FSVONLink(0, 0, 0);
+
+	SVONPath = MakeShareable<FSVONNavigationPath>(new FSVONNavigationPath());
 }
 
 // Called when the game starts
@@ -31,24 +34,39 @@ void USVONNavigationComponent::BeginPlay()
 /** Are we inside a valid nav volume ? */
 bool USVONNavigationComponent::HasNavVolume()
 {
-	return CurrentNavVolume && GetOwner() && CurrentNavVolume->EncompassesPoint(GetOwner()->GetActorLocation());
+	return CurrentNavVolume
+		&& GetOwner()
+		&& CurrentNavVolume->EncompassesPoint(GetPawnLocation())
+		&& CurrentNavVolume->GetNumLayers() > 0;
 }
 
 bool USVONNavigationComponent::FindVolume()
 {
 	TArray<AActor*> NavVolumes;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASVONVolume::StaticClass(), NavVolumes);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASVONVolumeActor::StaticClass(), NavVolumes);
 
 	for (AActor* Actor : NavVolumes)
 	{
-		auto Volume = Cast<ASVONVolume>(Actor);
-		if (Volume && Volume->EncompassesPoint(GetOwner()->GetActorLocation()))
+		auto Volume = Cast<ASVONVolumeActor>(Actor);
+		if (Volume && Volume->EncompassesPoint(GetPawnLocation()))
 		{
 			CurrentNavVolume = Volume;
 			return true;
 		}
 	}
+
 	return false;
+}
+
+FVector USVONNavigationComponent::GetPawnLocation()
+{
+	FVector Result;
+	auto Controller = Cast<AController>(GetOwner());
+	if(Controller)
+		if(auto Pawn = Controller->GetPawn())
+			Result = Pawn->GetActorLocation();
+
+	return Result;
 }
 
 // Called every frame
@@ -71,7 +89,6 @@ void USVONNavigationComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	int32 JobIndex;
 	if (JobQueue.Dequeue(JobIndex))
 	{
-		//GetWorld()->PersistentLineBatcher->Flush();
 		if (JobIndex > 0)
 			PointDebugIndex = 0;
 		else
@@ -117,7 +134,7 @@ FSVONLink USVONNavigationComponent::GetNavLocation(FVector& OutLocation)
 
 		LastLocation = NavLink;
 
-		auto TargetLocation = GetOwner()->GetActorLocation() + (GetOwner()->GetActorForwardVector() * 10000.f);
+		//auto TargetLocation = GetPawnLocation() + (GetOwner()->GetActorForwardVector() * 10000.f);
 
 		if (bDebugPrintCurrentPosition)
 		{
@@ -126,17 +143,19 @@ FSVONLink USVONNavigationComponent::GetNavLocation(FVector& OutLocation)
 
 			bool bIsValid = CurrentNavVolume->GetLinkLocation(NavLink, CurrentNodePosition);
 
-			DrawDebugLine(GetWorld(), GetOwner()->GetActorLocation(), CurrentNodePosition, bIsValid ? FColor::Green : FColor::Red, false, -1.f, 0, 10.f);
-			DrawDebugString(GetWorld(), GetOwner()->GetActorLocation() + FVector(0.f, 0.f, -50.f), NavLink.ToString(), nullptr, FColor::Yellow, 0.01f);
+			DrawDebugLine(GetWorld(), GetPawnLocation(), CurrentNodePosition, bIsValid ? FColor::Green : FColor::Red, false, -1.f, 0, 10.f);
+			DrawDebugString(GetWorld(), GetPawnLocation() + FVector(0.f, 0.f, -50.f), NavLink.ToString(), nullptr, FColor::Yellow, 0.01f);
 		}	
 	}
 
 	return NavLink;
 }
 
-bool USVONNavigationComponent::FindPathAsync(const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutNavPath)
+bool USVONNavigationComponent::FindPathAsync(const FVector& StartLocation, const FVector& TargetLocation, FThreadSafeBool& CompleteFlag, FSVONNavPathSharedPtr* OutNavPath)
 {
-	UE_LOG(UESVON, Display, TEXT("Finding path from %s and %s"), *GetOwner()->GetActorLocation().ToString(), *TargetLocation.ToString());
+#if WITH_EDITOR
+	UE_LOG(UESVON, Display, TEXT("Finding path from %s and %s"), *StartLocation.ToString(), *TargetLocation.ToString());
+#endif
 
 	FSVONLink StartNavLink;
 	FSVONLink TargetNavLink;
@@ -144,22 +163,34 @@ bool USVONNavigationComponent::FindPathAsync(const FVector& StartLocation, const
 	if (HasNavVolume())
 	{
 		// Get the nav link from our volume
-		if (!FSVONMediator::GetLinkFromLocation(GetOwner()->GetActorLocation(), *CurrentNavVolume, StartNavLink))
+		if (!FSVONMediator::GetLinkFromLocation(StartLocation, *CurrentNavVolume, StartNavLink))
 		{
+#if WITH_EDITOR
 			UE_LOG(UESVON, Display, TEXT("Path finder failed to find start nav link"));
+#endif
 			return false;
 		}
 
 		if (!FSVONMediator::GetLinkFromLocation(TargetLocation, *CurrentNavVolume, TargetNavLink))
 		{
+#if WITH_EDITOR
 			UE_LOG(UESVON, Display, TEXT("Path finder failed to find target nav link"));
+#endif
 			return false;
 		}
 
 		DebugPoints.Empty();
 		PointDebugIndex = -1;
 
-		(new FAutoDeleteAsyncTask<FSVONFindPathTask>(*CurrentNavVolume, GetWorld(), StartNavLink, TargetNavLink, StartLocation, TargetLocation, OutNavPath, JobQueue, DebugPoints))->StartBackgroundTask();
+		FSVONPathFinderSettings Settings;
+		Settings.bUseUnitCost = bUseUnitCost;
+		Settings.UnitCost = UnitCost;
+		Settings.WeightEstimate = WeightEstimate;
+		Settings.NodeSizeCompensation = NodeSizeCompensation;
+		Settings.PathCostType = PathCostType;
+		Settings.SmoothingIterations = SmoothingIterations;
+
+		(new FAutoDeleteAsyncTask<FSVONFindPathTask>(*CurrentNavVolume, Settings, GetWorld(), StartNavLink, TargetNavLink, StartLocation, TargetLocation, OutNavPath, CompleteFlag, DebugPoints))->StartBackgroundTask();
 
 		bIsBusy = true;
 
@@ -169,9 +200,11 @@ bool USVONNavigationComponent::FindPathAsync(const FVector& StartLocation, const
 	return false;
 }
 
-bool USVONNavigationComponent::FindPathImmediate(const FVector& StartLocation, const FVector& TargetLocation, FNavPathSharedPtr* OutNavPath)
+bool USVONNavigationComponent::FindPathImmediate(const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutNavPath)
 {
+#if WITH_EDITOR
 	UE_LOG(UESVON, Display, TEXT("Finding path immediate from %s and %s"), *StartLocation.ToString(), *TargetLocation.ToString());
+#endif
 
 	FSVONLink StartNavLink;
 	FSVONLink TargetNavLink;
@@ -180,19 +213,25 @@ bool USVONNavigationComponent::FindPathImmediate(const FVector& StartLocation, c
 		// Get the nav link from our volume
 		if (!FSVONMediator::GetLinkFromLocation(StartLocation, *CurrentNavVolume, StartNavLink))
 		{
+#if WITH_EDITOR
 			UE_LOG(UESVON, Display, TEXT("Path finder failed to find start nav link"));
+#endif
 			return false;
 		}
 
 		if (!FSVONMediator::GetLinkFromLocation(TargetLocation, *CurrentNavVolume, TargetNavLink))
 		{
+#if WITH_EDITOR
 			UE_LOG(UESVON, Display, TEXT("Path finder failed to find target nav link"));
+#endif
 			return false;
 		}
 
 		if (!OutNavPath || !OutNavPath->IsValid())
 		{
+#if WITH_EDITOR
 			UE_LOG(UESVON, Display, TEXT("Nav path data invalid"));
+#endif
 			return false;
 		}
 
@@ -219,7 +258,7 @@ bool USVONNavigationComponent::FindPathImmediate(const FVector& StartLocation, c
 		bIsBusy = true;
 		PointDebugIndex = 0;
 
-		Path->MarkReady();
+		Path->SetIsReady(true);
 
 		return true;
 	}
@@ -234,11 +273,11 @@ void USVONNavigationComponent::DebugLocalLocation(FVector& OutLocation)
 		for (int i = 0; i < CurrentNavVolume->GetNumLayers() - 1; i++)
 		{
 			FIntVector Location;
-			FSVONMediator::GetVolumeXYZ(GetOwner()->GetActorLocation(), *CurrentNavVolume, i, Location);
+			FSVONMediator::GetVolumeXYZ(GetPawnLocation(), *CurrentNavVolume, i, Location);
 
 			auto Code = morton3D_64_encode(Location.X, Location.Y, Location.Z);
 			auto CodeString = FString::FromInt(Code);
-			DrawDebugString(GetWorld(), GetOwner()->GetActorLocation() + FVector(0.f, 0.f, i * 50.0f), Location.ToString() + " - " + CodeString, nullptr, FColor::White, 0.01f);
+			DrawDebugString(GetWorld(), GetPawnLocation() + FVector(0.f, 0.f, i * 50.0f), Location.ToString() + " - " + CodeString, nullptr, FColor::White, 0.01f);
 		}
 	}
 }

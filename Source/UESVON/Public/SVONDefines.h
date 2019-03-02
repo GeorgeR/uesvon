@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AITypes.h"
 
 typedef uint8 FLayerIndex;
 typedef int32 FNodeIndex;
@@ -31,8 +32,34 @@ class UESVON_API FSVONStatics
 {
 public:
 	static const FIntVector Directions[];
-	static const FNodeIndex DirectionChildOffsets[6][4];
-	static const FNodeIndex DirectionLeafChildOffsets[6][16];
+	static const FNodeIndex DirectionalChildOffsets[6][4];
+	static const FNodeIndex DirectionalLeafChildOffsets[6][16];
 	static const FColor LayerColors[];
 	static const FColor LinkColors[];
+};
+
+UENUM(BlueprintType)
+namespace ESVONPathfindingRequestResult
+{
+	enum Type
+	{
+		SPRR_Failed				UMETA(DisplayName = "Failed"), // Something went wrong
+		SPRR_ReadyToPath		UMETA(DisplayName = "Ready to Path"), // Pre-reqs satisfied
+		SPRR_AlreadyAtGoal		UMETA(DisplayName = "Already at Goal"), // No need to move
+		SPRR_Deferred			UMETA(DisplayName = "Deferred"), // Passed request to another thread, need to wait
+		SPRR_Success			UMETA(DisplayName = "Success") // it worked!
+	};
+}
+
+struct UESVON_API FSVONPathfindingRequestResult
+{
+public:
+	FAIRequestID MoveId;
+	TEnumAsByte<ESVONPathfindingRequestResult::Type> Code;
+
+	FSVONPathfindingRequestResult()
+		: MoveId(FAIRequestID::InvalidRequest),
+		Code(ESVONPathfindingRequestResult::SPRR_Failed) {}
+
+	operator ESVONPathfindingRequestResult::Type() const { return Code; }
 };

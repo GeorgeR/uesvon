@@ -9,7 +9,7 @@ const FIntVector FSVONStatics::Directions[] = {
 	FIntVector(0,0,-1)
 };
 
-const FNodeIndex FSVONStatics::DirectionChildOffsets[6][4] = {
+const FNodeIndex FSVONStatics::DirectionalChildOffsets[6][4] = {
 	{ 0,4,2,6 },
 	{ 1,3,5,7 },
 	{ 0,1,4,5 },
@@ -18,7 +18,7 @@ const FNodeIndex FSVONStatics::DirectionChildOffsets[6][4] = {
 	{ 4,5,6,7 }
 };
 
-const FNodeIndex FSVONStatics::DirectionLeafChildOffsets[6][16] = {
+const FNodeIndex FSVONStatics::DirectionalLeafChildOffsets[6][16] = {
 	{ 0 ,2 ,16,18 ,4 ,6 ,20,22 ,32,34,48,50 ,36,38,52,54 },
 	{ 9 ,11,25,27 ,13,15,29,31 ,41,43,57,59 ,45,47,61,63 },
 	{ 0 ,1 ,8 ,9  ,4 ,5 ,12,13 ,32,33,40,41 ,36,37,44,45 },
