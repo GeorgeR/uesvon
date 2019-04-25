@@ -59,11 +59,9 @@ private:
 	FSVONLink Current;
 	FSVONLink Goal;
 
-	const ASVONVolumeActor& Volume;
-
-	FSVONPathFinderSettings& Settings;
-
 	UWorld* World;
+	const ASVONVolumeActor& Volume;
+	FSVONPathFinderSettings& Settings;
 
 	/* A* heuristic calculation */
 	float HeuristicScore(const FSVONLink& Start, const FSVONLink& Target);
@@ -74,7 +72,7 @@ private:
 	void ProcessLink(const FSVONLink& Neighbor);
 
 	/* Constructs the path by navigating back through our CameFrom map */
-	void BuildPath(TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath);
+	void BuildPath(const TMap<FSVONLink, FSVONLink>& InCameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath);
 
 	/*void Smooth_Chaikin(TArray<FVector>& somePoints, int aNumIterations);*/
 };

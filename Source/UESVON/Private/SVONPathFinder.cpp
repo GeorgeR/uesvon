@@ -5,7 +5,7 @@
 #include "SVONVolumeActor.h"
 #include "SVONNavigationPath.h"
 
-int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath)
+int32 FSVONPathFinder::FindPath(const FSVONLink& InStart, const FSVONLink& InGoal, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath)
 {
 	OpenSet.Empty();
 	ClosedSet.Empty();
@@ -13,13 +13,13 @@ int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, c
 	FScore.Empty();
 	GScore.Empty();
 	Current = FSVONLink();
-	this->Goal = Goal;
-	this->Start = Start;
+	this->Goal = InGoal;
+	this->Start = InStart;
 
-    OpenSet.Add(Start);
-	CameFrom.Add(Start, Start);
-	GScore.Add(Start, 0);
-	FScore.Add(Start, HeuristicScore(Start, this->Goal)); // Distance to target
+    OpenSet.Add(InStart);
+	CameFrom.Add(InStart, InStart);
+	GScore.Add(InStart, 0);
+	FScore.Add(InStart, HeuristicScore(InStart, this->Goal)); // Distance to target
 
 	int NumIterations = 0;
 	while (OpenSet.Num() > 0)
@@ -37,7 +37,7 @@ int32 FSVONPathFinder::FindPath(const FSVONLink& Start, const FSVONLink& Goal, c
 		OpenSet.Remove(Current);
 		ClosedSet.Add(Current);
 
-		if (Current == Goal)
+		if (Current == InGoal)
 		{
 			BuildPath(CameFrom, Current, StartLocation, TargetLocation, OutPath);
 #if WITH_EDITOR
@@ -147,7 +147,7 @@ void FSVONPathFinder::ProcessLink(const FSVONLink& Neighbor)
 	}
 }
 
-void FSVONPathFinder::BuildPath(TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath)
+void FSVONPathFinder::BuildPath(const TMap<FSVONLink, FSVONLink>& CameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath)
 {
 	FSVONPathPoint Point;
 	TArray<FSVONPathPoint> Points;

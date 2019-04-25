@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "NavigationData.h"
+#include "ThreadSafeBool.h"
 #include "Components/LineBatchComponent.h "
 
 #include "SVONVolumeActor.h"
@@ -79,7 +80,7 @@ void USVONNavigationComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		FindVolume();
 	else if (CurrentNavVolume->IsReadyForNavigation() && !bIsBusy)
 	{
-		FVector Location = GetOwner()->GetActorLocation();
+		FVector Location = GetPawnLocation();
 		if (bDebugPrintMortonCodes)
 			DebugLocalLocation(Location);
 
@@ -145,7 +146,7 @@ FSVONLink USVONNavigationComponent::GetNavLocation(FVector& OutLocation)
 
 			DrawDebugLine(GetWorld(), GetPawnLocation(), CurrentNodePosition, bIsValid ? FColor::Green : FColor::Red, false, -1.f, 0, 10.f);
 			DrawDebugString(GetWorld(), GetPawnLocation() + FVector(0.f, 0.f, -50.f), NavLink.ToString(), nullptr, FColor::Yellow, 0.01f);
-		}	
+		}
 	}
 
 	return NavLink;

@@ -37,7 +37,7 @@ public:
 	void ResetForRepath();
 
 	FORCEINLINE const bool IsReady() const { return bIsReady; }
-	FORCEINLINE void SetIsReady(const bool bIsReady) { this->bIsReady = bIsReady; }
+	FORCEINLINE void SetIsReady(const bool IsReady) { this->bIsReady = IsReady; }
 
 	void CreateNavigationPath(FNavigationPath& OutPath);
 

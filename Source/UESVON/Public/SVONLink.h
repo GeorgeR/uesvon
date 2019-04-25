@@ -27,13 +27,13 @@ public:
 		SubNodeIndex(SubNodeIndex) {}
 
 	FLayerIndex GetLayerIndex() const { return LayerIndex; }
-	void SetLayerIndex(const FLayerIndex LayerIndex) { this->LayerIndex = LayerIndex; }
+	void SetLayerIndex(const FLayerIndex Value) { this->LayerIndex = Value; }
 
 	FNodeIndex GetNodeIndex() const { return NodeIndex; }
-	void SetNodeIndex(const FNodeIndex NodeIndex) { this->NodeIndex = NodeIndex; }
+	void SetNodeIndex(const FNodeIndex Value) { this->NodeIndex = Value; }
 
 	FSubNodeIndex GetSubNodeIndex() const { return SubNodeIndex; }
-	void SetSubNodeIndex(const FSubNodeIndex SubNodeIndex) { this->SubNodeIndex = SubNodeIndex; }
+	void SetSubNodeIndex(const FSubNodeIndex Value) { this->SubNodeIndex = Value; }
 
 	bool IsValid() const { return LayerIndex != InvalidLayerIndex; }
 	void SetInvalid() { LayerIndex = InvalidLayerIndex; }

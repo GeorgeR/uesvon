@@ -302,11 +302,11 @@ void UAITask_SVONMoveTo::RequestPath()
 
 #if WITH_EDITOR
 	UE_VLOG(this, VUESVON, Log, TEXT("SVONMoveTo: Requesting Synchronous pathfinding!"));
+	UE_LOG(UESVON, Error, TEXT("SVONMoveTo: Requesting Synchronous pathfinding!"));
 #endif
 
-	NavigationComponent->FindPathImmediate(GetOwnerActor()->GetActorLocation(), MoveRequest.IsMoveToActorRequest() ? MoveRequest.GetGoalActor()->GetActorLocation() : MoveRequest.GetGoalLocation(), &SVONPath);
-
-	RequestMove();
+	if (NavigationComponent->FindPathImmediate(NavigationComponent->GetPawnLocation(), MoveRequest.IsMoveToActorRequest() ? MoveRequest.GetGoalActor()->GetActorLocation() : MoveRequest.GetGoalLocation(), &SVONPath))
+		Result.Code = ESVONPathfindingRequestResult::SPRR_Success;
 
 	return;
 }
@@ -323,9 +323,9 @@ void UAITask_SVONMoveTo::RequestPathAsync()
 	AsyncTaskComplete = false;
 
 	// Request the async path
-	SVONNavigationComponent->FindPathAsync(GetOwnerActor()->GetActorLocation(), MoveRequest.IsMoveToActorRequest() ? MoveRequest.GetGoalActor()->GetActorLocation() : MoveRequest.GetGoalLocation(), AsyncTaskComplete, &SVONPath);
+	SVONNavigationComponent->FindPathAsync(NavigationComponent->GetPawnLocation(), MoveRequest.IsMoveToActorRequest() ? MoveRequest.GetGoalActor()->GetActorLocation() : MoveRequest.GetGoalLocation(), AsyncTaskComplete, &SVONPath);
 
-	Result.Code = ESVONPathfindingRequestResult::SPRR_Success;
+	Result.Code = ESVONPathfindingRequestResult::SPRR_Deferred;
 }
 
 void UAITask_SVONMoveTo::RequestMove()
@@ -470,7 +470,7 @@ void UAITask_SVONMoveTo::OnRequestFinished(FAIRequestID RequestID, const FPathFo
 	}
 }
 
-void UAITask_SVONMoveTo::OnPathEvent(FNavigationPath* Path, ENavPathEvent::Type Event)
+void UAITask_SVONMoveTo::OnPathEvent(FNavigationPath* InPath, ENavPathEvent::Type Event)
 {
 	const static UEnum* NavPathEventEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ENavPathEvent"));
 	UE_VLOG(GetGameplayTasksComponent(), LogGameplayTasks, Log, TEXT("%s> Path event: %s"), *GetName(), *NavPathEventEnum->GetNameStringByValue(Event));
@@ -480,16 +480,16 @@ void UAITask_SVONMoveTo::OnPathEvent(FNavigationPath* Path, ENavPathEvent::Type 
 	case ENavPathEvent::NewPath:
 	case ENavPathEvent::UpdatedDueToGoalMoved:
 	case ENavPathEvent::UpdatedDueToNavigationChanged:
-		if (Path && Path->IsPartial() && !MoveRequest.IsUsingPartialPaths())
+		if (InPath && InPath->IsPartial() && !MoveRequest.IsUsingPartialPaths())
 		{
 			UE_VLOG(GetGameplayTasksComponent(), LogGameplayTasks, Log, TEXT(">> partial path is not allowed, aborting"));
-			UPathFollowingComponent::LogPathHelper(OwnerController, Path, MoveRequest.GetGoalActor());
+			UPathFollowingComponent::LogPathHelper(OwnerController, InPath, MoveRequest.GetGoalActor());
 			FinishMoveTask(EPathFollowingResult::Aborted);
 		}
 #if ENABLE_VISUAL_LOG
 		else if (!IsActive())
 		{
-			UPathFollowingComponent::LogPathHelper(OwnerController, Path, MoveRequest.GetGoalActor());
+			UPathFollowingComponent::LogPathHelper(OwnerController, InPath, MoveRequest.GetGoalActor());
 		}
 #endif // ENABLE_VISUAL_LOG
 		break;
