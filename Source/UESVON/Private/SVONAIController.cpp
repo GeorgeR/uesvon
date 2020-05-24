@@ -1,6 +1,6 @@
 #include "SVONAIController.h"
 
-#include "VisualLogger.h"
+#include "VisualLogger/VisualLogger.h"
 #include "NavigationSystem.h"
 #include "SVONNavigationComponent.h"
 #include "Tasks/AITask.h"

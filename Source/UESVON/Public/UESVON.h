@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ModuleManager.h"
+#include "Modules/ModuleManager.h"
 
 #if WITH_EDITOR
 DECLARE_LOG_CATEGORY_EXTERN(UESVON, Log, All);

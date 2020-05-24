@@ -41,7 +41,7 @@ public:
 	~FSVONPathFinder() { };
 
 	/* Performs an A* search from start to target navlink */
-	int32 FindPath(const FSVONLink& Start, const FSVONLink& Target, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath);
+	int32 FindPath(const FSVONLink& InStart, const FSVONLink& InGoal, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath);
 
 	//FORCEINLINE const FSVONNavigationPath& GetPath() const { return Path; }
 	//const FNavigationPath& GetNavPath();  
@@ -64,15 +64,15 @@ private:
 	FSVONPathFinderSettings& Settings;
 
 	/* A* heuristic calculation */
-	float HeuristicScore(const FSVONLink& Start, const FSVONLink& Target);
+	float HeuristicScore(const FSVONLink& InStart, const FSVONLink& InTarget);
 
 	/* Distance between two links */
-	float GetCost(const FSVONLink& Start, const FSVONLink& Target);
+	float GetCost(const FSVONLink& InStart, const FSVONLink& InTarget) const;
 
 	void ProcessLink(const FSVONLink& Neighbor);
 
 	/* Constructs the path by navigating back through our CameFrom map */
-	void BuildPath(const TMap<FSVONLink, FSVONLink>& InCameFrom, FSVONLink Current, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath);
+	void BuildPath(const TMap<FSVONLink, FSVONLink>& InCameFrom, FSVONLink InCurrent, const FVector& StartLocation, const FVector& TargetLocation, FSVONNavPathSharedPtr* OutPath) const;
 
 	/*void Smooth_Chaikin(TArray<FVector>& somePoints, int aNumIterations);*/
 };

@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 
+#include "SVONNavigationPath.generated.h"
+
 UENUM(BlueprintType)
 enum class ESVONPathCostType : uint8
 {

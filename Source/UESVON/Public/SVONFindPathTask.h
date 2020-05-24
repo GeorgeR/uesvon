@@ -4,7 +4,7 @@
 #include "SVONLink.h"
 #include "SVONTypes.h"
 #include "SVONPathFinder.h"
-#include "ThreadSafeBool.h"
+#include "HAL/ThreadSafeBool.h"
 
 class ASVONVolumeActor;
 struct FSVONPathFinderSettings;

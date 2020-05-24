@@ -6,7 +6,7 @@
 #include "AITypes.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "Tasks/AITask.h"
-#include "ThreadSafeBool.h"
+#include "HAL/ThreadSafeBool.h"
 
 #include "SVONTypes.h"
 #include "SVONDefines.h"
@@ -32,7 +32,7 @@ public:
 	void ConditionalPerformMove();
 
 	/** prepare move task for activation */
-	void SetUp(AAIController* Controller, const FAIMoveRequest& MoveRequest, bool bUseAsyncPathFinding);
+	void Setup(AAIController* Controller, const FAIMoveRequest& InMoveRequest, bool InbUseAsyncPathFinding);
 
 	EPathFollowingResult::Type GetMoveResult() const { return MoveResult; }
 	bool WasMoveSuccessful() const { return MoveResult == EPathFollowingResult::Success; }
@@ -51,7 +51,7 @@ public:
 	void TickTask(float DeltaTime) override;
 
 protected:
-	void LogPathHelper();
+	void LogPathHelper() const;
 
 	FThreadSafeBool AsyncTaskComplete;
 	bool bUseAsyncPathFinding;
@@ -90,7 +90,7 @@ protected:
 	uint8 bUseContinuousTracking : 1;
 
 	virtual void Activate() override;
-	virtual void OnDestroy(bool bOwnerFinished) override;
+	virtual void OnDestroy(bool bIsOwnerFinished) override;
 
 	virtual void Pause() override;
 	virtual void Resume() override;
@@ -114,7 +114,7 @@ protected:
 
 	void HandleAsyncPathTaskComplete();
 
-	void ResetPaths();
+	void ResetPaths() const;
 
 	/** remove all delegates */
 	virtual void ResetObservers();
@@ -132,5 +132,5 @@ protected:
 	virtual void OnPathEvent(FNavigationPath* InPath, ENavPathEvent::Type Event);
 
 	/** event from path following */
-	virtual void OnRequestFinished(FAIRequestID RequestID, const FPathFollowingResult& Result);
+	virtual void OnRequestFinished(FAIRequestID RequestID, const FPathFollowingResult& OutResult);
 };

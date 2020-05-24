@@ -83,14 +83,14 @@ public:
 
 	const FVector& GetOrigin() const { return Origin; }
 	const FVector& GetExtent() const { return Extent; }
-	const uint8 GetNumLayers() const { return NumLayers; }
-	const TArray<FSVONNode>& GetLayer(FLayerIndex Layer) const;
-	float GetVoxelSize(FLayerIndex Layer) const;
+    uint8 GetNumLayers() const { return NumLayers; }
+	const TArray<FSVONNode>& GetLayer(FLayerIndex LayerIndex) const;
+	float GetVoxelSize(FLayerIndex LayerIndex) const;
 
-	bool IsReadyForNavigation();
+	bool IsReadyForNavigation() const;
 	
 	bool GetLinkLocation(const FSVONLink& Link, FVector& OutLocation) const;
-	bool GetNodeLocation(FLayerIndex Layer, FMortonCode Code, FVector& OutLocation) const;
+	bool GetNodeLocation(FLayerIndex LayerIndex, FMortonCode Code, FVector& OutLocation) const;
 	const FSVONNode& GetNode(const FSVONLink& Link) const;
 	const FSVONLeafNode& GetLeafNode(FNodeIndex Index) const;
 
@@ -111,24 +111,24 @@ private:
 	// First pass rasterize results
 	TArray<TSet<FMortonCode>> BlockedIndices;
 
-	TArray<FSVONNode>& GetLayer(FLayerIndex Layer);
+	TArray<FSVONNode>& GetLayer(FLayerIndex LayerIndex);
 
 	void SetupVolume();
 
 	bool FirstPassRasterize();
-	void RasterizeLayer(FLayerIndex Layer);
+	void RasterizeLayer(FLayerIndex LayerIndex);
 
-	int32 GetNodesInLayer(FLayerIndex Layer);
-	int32 GetNodesPerSide(FLayerIndex Layer);
+	int32 GetNodesInLayer(FLayerIndex LayerIndex) const;
+	int32 GetNodesPerSide(FLayerIndex LayerIndex) const;
 
-	bool GetIndexForCode(FLayerIndex Layer, FMortonCode Code, FNodeIndex& OutIndex) const;
+	bool GetIndexForCode(FLayerIndex LayerIndex, FMortonCode Code, FNodeIndex& OutIndex) const;
 
-    void BuildNeighborLinks(FLayerIndex Layer);
-	bool FindLinkInDirection(FLayerIndex Layer, const FNodeIndex NodeIndex, uint8 Direction, FSVONLink& OutLinkToUpdate, FVector& OutStartLocationForDebug);
-	void RasterizeLeafNode(FVector& Origin, FNodeIndex LeafIndex);
-	bool SetNeighbor(const FLayerIndex Layer, const FNodeIndex ArrayIndex, const EDirection Direction);
+    void BuildNeighborLinks(FLayerIndex LayerIndex);
+	bool FindLinkInDirection(FLayerIndex LayerIndex, const FNodeIndex NodeIndex, uint8 Direction, FSVONLink& OutLinkToUpdate, FVector& OutStartLocationForDebug);
+	void RasterizeLeafNode(FVector& InOrigin, FNodeIndex LeafIndex);
+	bool SetNeighbor(const FLayerIndex LayerIndex, const FNodeIndex ArrayIndex, const EDirection Direction);
 
-	bool IsAnyMemberBlocked(FLayerIndex Layer, FMortonCode Code);
+	bool IsAnyMemberBlocked(FLayerIndex LayerIndex, FMortonCode Code);
 
 	bool IsBlocked(const FVector& Location, const float Size) const;
 

@@ -357,7 +357,7 @@ UAITask_SVONMoveTo* UBTTask_SVONMoveTo::PrepareMoveTask(UBehaviorTreeComponent& 
 {
 	auto MoveTask = ExistingTask ? ExistingTask : NewBTAITask<UAITask_SVONMoveTo>(OwnerComp);
 	if (MoveTask)
-		MoveTask->SetUp(MoveTask->GetAIController(), MoveRequest, bUseAsyncPathfinding);
+		MoveTask->Setup(MoveTask->GetAIController(), MoveRequest, bUseAsyncPathfinding);
 
 	return MoveTask;
 }

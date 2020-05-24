@@ -18,7 +18,7 @@ ASVONVolumeActor::ASVONVolumeActor()
 
 	bColored = true;
 
-	auto Bounds = GetComponentsBoundingBox(true);
+    const auto Bounds = AActor::GetComponentsBoundingBox(true);
 	Bounds.GetCenterAndExtents(Origin, Extent);
 }
 
@@ -47,7 +47,7 @@ bool ASVONVolumeActor::Generate()
 #if WITH_EDITOR
 	GetWorld()->PersistentLineBatcher->SetComponentTickEnabled(false);
 
-	auto PlayerController = GetWorld()->GetFirstPlayerController();
+    const auto PlayerController = GetWorld()->GetFirstPlayerController();
 	if (PlayerController)
 		DebugLocation = PlayerController->GetPawn()->GetActorLocation();
 	else if (GetWorld()->ViewLocationsRenderedLastFrame.Num() > 0)
@@ -60,7 +60,7 @@ bool ASVONVolumeActor::Generate()
 
 #if WITH_EDITOR
 	// Setup timing
-	auto StartTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+    const auto StartTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
 #endif
 
 	// Clear data (for now)
@@ -89,19 +89,19 @@ bool ASVONVolumeActor::Generate()
 		BuildNeighborLinks(i);
 
 #if WITH_EDITOR
-	auto BuildTime = (duration_cast<milliseconds>(system_clock::now().time_since_epoch()) - StartTime).count();
+    const auto BuildTime = (duration_cast<milliseconds>(system_clock::now().time_since_epoch()) - StartTime).count();
 
-	int32 TotalNodeCount = 0;
+    auto TotalNodeCount = 0;
 	for (auto i = 0; i < NumLayers; i++)
 		TotalNodeCount += Data.Layers[i].Num();
 
 	auto TotalBytes = sizeof(FSVONNode) * TotalNodeCount;
 	TotalBytes += sizeof(FSVONLeafNode) * Data.LeafNodes.Num();
 
-	UE_LOG(UESVON, Display, TEXT("Generation Time : %d"), BuildTime);
+	UE_LOG(UESVON, Display, TEXT("Generation Time : %d"), StaticCast<int32>(BuildTime));
 	UE_LOG(UESVON, Display, TEXT("Total Layers-Nodes : %d-%d"), NumLayers, TotalNodeCount);
 	UE_LOG(UESVON, Display, TEXT("Total Leaf Nodes : %d"), Data.LeafNodes.Num());
-	UE_LOG(UESVON, Display, TEXT("Total Size (bytes): %d"), TotalBytes);
+	UE_LOG(UESVON, Display, TEXT("Total Size (bytes): %d"), StaticCast<int32>(TotalBytes));
 #endif
 
 	NumBytes = Data.GetSize();
@@ -111,7 +111,7 @@ bool ASVONVolumeActor::Generate()
 
 void ASVONVolumeActor::SetupVolume()
 {
-	FBox Bounds = GetComponentsBoundingBox(true);
+    const auto Bounds = GetComponentsBoundingBox(true);
 	Bounds.GetCenterAndExtents(Origin, Extent);
 }
 
@@ -120,28 +120,30 @@ bool ASVONVolumeActor::FirstPassRasterize()
 	// Add the first LayerIndex of blocking
     BlockedIndices.Emplace();
 
-	auto NumNodes = GetNodesInLayer(1);
+    const auto NumNodes = GetNodesInLayer(1);
 	for (auto i = 0; i < NumNodes; i++)
 	{
 		FVector Location;
 		GetNodeLocation(1, i, Location);
 
+		static FName NAME_TraceTag(TEXT("SVONFirstPassRasterize"));
+
 		FCollisionQueryParams Params;
 		Params.bFindInitialOverlaps = true;
 		Params.bTraceComplex = false;
-		Params.TraceTag = "SVONFirstPassRasterize";
+		Params.TraceTag = NAME_TraceTag;
 		if (GetWorld()->OverlapBlockingTestByChannel(Location, FQuat::Identity, CollisionChannel, FCollisionShape::MakeBox(FVector(GetVoxelSize(1) * 0.5f)), Params))
 			BlockedIndices[0].Add(i);
 	}
 
-	int32 LayerIndex = 0;
+    auto LayerIndex = 0;
 	while (BlockedIndices[LayerIndex].Num() > 1)
 	{
 		// Add a new LayerIndex to structure
 		BlockedIndices.Emplace();
 
 		// Add any parent morton codes to the new LayerIndex
-		for (FMortonCode& Code : BlockedIndices[LayerIndex])
+		for (auto& Code : BlockedIndices[LayerIndex])
 			BlockedIndices[LayerIndex + 1].Add(Code >> 3);
 
 		LayerIndex++;
@@ -150,9 +152,9 @@ bool ASVONVolumeActor::FirstPassRasterize()
 	return true;
 }
 
-bool ASVONVolumeActor::GetNodeLocation(FLayerIndex Layer, FMortonCode Code, FVector& OutLocation) const
+bool ASVONVolumeActor::GetNodeLocation(const FLayerIndex LayerIndex, const FMortonCode Code, FVector& OutLocation) const
 {
-	auto VoxelSize = GetVoxelSize(Layer);
+    const auto VoxelSize = GetVoxelSize(LayerIndex);
 	uint_fast32_t X, Y, Z;
 	morton3D_64_decode(Code, X, Y, Z);
 
@@ -164,20 +166,20 @@ bool ASVONVolumeActor::GetNodeLocation(FLayerIndex Layer, FMortonCode Code, FVec
 // Gets the Location of a given link. Returns true if the link is open, false if blocked
 bool ASVONVolumeActor::GetLinkLocation(const FSVONLink& Link, FVector& OutLocation) const
 {
-	const FSVONNode& Node = GetLayer(Link.LayerIndex)[Link.NodeIndex];
+	const auto& Node = GetLayer(Link.LayerIndex)[Link.NodeIndex];
 
 	GetNodeLocation(Link.LayerIndex, Node.Code, OutLocation);
 
 	// If this is LayerIndex 0, and there are valid children
 	if (Link.LayerIndex == 0 && Node.FirstChild.IsValid())
 	{
-		auto VoxelSize = GetVoxelSize(0);
+        const auto VoxelSize = GetVoxelSize(0);
 		uint_fast32_t X, Y, Z;
 		morton3D_64_decode(Link.SubNodeIndex, X,Y,Z);
 
 		OutLocation += FVector(X * VoxelSize * 0.25f, Y * VoxelSize * 0.25f, Z * VoxelSize * 0.25f) - FVector(VoxelSize * 0.375);
-		const FSVONLeafNode& LeafNode = GetLeafNode(Node.FirstChild.NodeIndex);
-		bool bIsBlocked = LeafNode.GetNode(Link.SubNodeIndex);
+		const auto& LeafNode = GetLeafNode(Node.FirstChild.NodeIndex);
+        const auto bIsBlocked = LeafNode.GetNode(Link.SubNodeIndex);
 
 		return !bIsBlocked;
 	}
@@ -185,10 +187,9 @@ bool ASVONVolumeActor::GetLinkLocation(const FSVONLink& Link, FVector& OutLocati
 	return true;
 }
 
-bool ASVONVolumeActor::GetIndexForCode(FLayerIndex LayerIndex, FMortonCode Code, FNodeIndex& OutIndex) const
+bool ASVONVolumeActor::GetIndexForCode(const FLayerIndex LayerIndex, const FMortonCode Code, FNodeIndex& OutIndex) const
 {
-	const TArray<FSVONNode>& Layer = GetLayer(LayerIndex);
-
+	const auto& Layer = GetLayer(LayerIndex);
 	for (auto i = 0; i < Layer.Num(); i++)
 	{
 		if (Layer[i].Code == Code)
@@ -203,22 +204,23 @@ bool ASVONVolumeActor::GetIndexForCode(FLayerIndex LayerIndex, FMortonCode Code,
 
 const FSVONNode& ASVONVolumeActor::GetNode(const FSVONLink& Link) const
 {
+	// @todo: remove magic number
 	if (Link.LayerIndex < 14)
 		return GetLayer(Link.LayerIndex)[Link.NodeIndex];
 	else
 		return GetLayer(NumLayers - 1)[0];
 }
 
-const FSVONLeafNode& ASVONVolumeActor::GetLeafNode(FNodeIndex Index) const
+const FSVONLeafNode& ASVONVolumeActor::GetLeafNode(const FNodeIndex Index) const
 {
 	return Data.LeafNodes[Index];
 }
 
 void ASVONVolumeActor::GetLeafNeighbors(const FSVONLink& Link, TArray<FSVONLink>& OutNeighbors) const
 {
-    FMortonCode LeafIndex = Link.SubNodeIndex;
-    const FSVONNode& Node = GetNode(Link);
-	const FSVONLeafNode& Leaf = GetLeafNode(Node.FirstChild.NodeIndex);
+    const FMortonCode LeafIndex = Link.SubNodeIndex;
+    const auto& Node = GetNode(Link);
+	const auto& Leaf = GetLeafNode(Node.FirstChild.NodeIndex);
 
 	// Get our starting co-ordinates
 	uint_fast32_t X = 0, Y = 0, Z = 0;
@@ -246,8 +248,8 @@ void ASVONVolumeActor::GetLeafNeighbors(const FSVONLink& Link, TArray<FSVONLink>
 		}
 		else // the neighbors is out of Bounds, we need to find our Neighbor
 		{
-			const FSVONLink& NeighborLink = Node.Neighbors[i];
-			const FSVONNode& NeighborNode = GetNode(NeighborLink);
+			const auto& NeighborLink = Node.Neighbors[i];
+			const auto& NeighborNode = GetNode(NeighborLink);
 
 			// If the Neighbor LayerIndex 0 has no Leaf nodes, just return it
 			if (!NeighborNode.FirstChild.IsValid())
@@ -256,7 +258,7 @@ void ASVONVolumeActor::GetLeafNeighbors(const FSVONLink& Link, TArray<FSVONLink>
 				continue;
 			}
 
-			const FSVONLeafNode& LeafNode = GetLeafNode(NeighborNode.FirstChild.NodeIndex);
+			const auto& LeafNode = GetLeafNode(NeighborNode.FirstChild.NodeIndex);
 			if (LeafNode.IsCompletelyBlocked())
 			{
 				// The Leaf Node is completely blocked, we don't return it
@@ -289,14 +291,14 @@ void ASVONVolumeActor::GetLeafNeighbors(const FSVONLink& Link, TArray<FSVONLink>
 
 void ASVONVolumeActor::GetNeighbors(const FSVONLink& Link, TArray<FSVONLink>& OutNeighbors) const
 {
-	const FSVONNode& Node = GetNode(Link);
+	const auto& Node = GetNode(Link);
 	for (auto i = 0; i < 6; i++)
 	{
-		const FSVONLink& NeighborLink = Node.Neighbors[i];
+		const auto& NeighborLink = Node.Neighbors[i];
 		if (!NeighborLink.IsValid())
 			continue;
 
-		const FSVONNode& Neighbor = GetNode(NeighborLink);
+		const auto& Neighbor = GetNode(NeighborLink);
 
 		// If the Neighbor has no children, it's empty, we just use it
 		if (!Neighbor.HasChildren())
@@ -366,24 +368,24 @@ void ASVONVolumeActor::Serialize(FArchive& Ar)
 	}
 }
 
-float ASVONVolumeActor::GetVoxelSize(FLayerIndex Layer) const
+float ASVONVolumeActor::GetVoxelSize(const FLayerIndex LayerIndex) const
 {
-	return (Extent.X / FMath::Pow(2, VoxelPower)) * (FMath::Pow(2.0f, Layer + 1));
+	return (Extent.X / FMath::Pow(2, VoxelPower)) * (FMath::Pow(2.0f, LayerIndex + 1));
 }
 
-bool ASVONVolumeActor::IsReadyForNavigation()
+bool ASVONVolumeActor::IsReadyForNavigation() const
 {
 	return bIsReadyForNavigation;
 }
 
-int32 ASVONVolumeActor::GetNodesInLayer(FLayerIndex Layer)
+int32 ASVONVolumeActor::GetNodesInLayer(const FLayerIndex LayerIndex) const
 {
-	return FMath::Pow(FMath::Pow(2, (VoxelPower - (Layer))), 3);
+	return FMath::Pow(FMath::Pow(2, (VoxelPower - (LayerIndex))), 3);
 }
 
-int32 ASVONVolumeActor::GetNodesPerSide(FLayerIndex Layer)
+int32 ASVONVolumeActor::GetNodesPerSide(const FLayerIndex LayerIndex) const
 {
-	return FMath::Pow(2, (VoxelPower - (Layer)));
+	return FMath::Pow(2, (VoxelPower - (LayerIndex)));
 }
 
 void ASVONVolumeActor::BeginPlay()
@@ -406,7 +408,7 @@ void ASVONVolumeActor::PostUnregisterAllComponents()
 	Super::PostUnregisterAllComponents();
 }
 
-void ASVONVolumeActor::BuildNeighborLinks(FLayerIndex LayerIndex)
+void ASVONVolumeActor::BuildNeighborLinks(const FLayerIndex LayerIndex)
 {
 	auto& Layer = GetLayer(LayerIndex);
 	auto SearchLayerIndex = LayerIndex;
@@ -453,9 +455,9 @@ void ASVONVolumeActor::BuildNeighborLinks(FLayerIndex LayerIndex)
 	}
 }
 
-bool ASVONVolumeActor::FindLinkInDirection(FLayerIndex LayerIndex, const FNodeIndex NodeIndex, uint8 Direction, FSVONLink& OutLinkToUpdate, FVector& OutStartLocationForDebug)
+bool ASVONVolumeActor::FindLinkInDirection(const FLayerIndex LayerIndex, const FNodeIndex NodeIndex, const uint8 Direction, FSVONLink& OutLinkToUpdate, FVector& OutStartLocationForDebug)
 {
-	auto MaxCoord = GetNodesPerSide(LayerIndex);
+    const auto MaxCoord = GetNodesPerSide(LayerIndex);
 	auto& Node = GetLayer(LayerIndex)[NodeIndex];
 	auto& Layer = GetLayer(LayerIndex);
 
@@ -476,9 +478,10 @@ bool ASVONVolumeActor::FindLinkInDirection(FLayerIndex LayerIndex, const FNodeIn
 		OutLinkToUpdate.SetInvalid();
 		if (bShowNeighborLinks && IsInDebugRange(OutStartLocationForDebug))
 		{
-			FVector StartLocation, EndLocation;
+			FVector StartLocation;
 			GetNodeLocation(LayerIndex, Node.Code, StartLocation);
-			EndLocation = StartLocation + (FVector(FSVONStatics::Directions[Direction]) * 100.f);
+
+            const auto EndLocation = StartLocation + (FVector(FSVONStatics::Directions[Direction]) * 100.f);
 			DrawDebugLine(GetWorld(), OutStartLocationForDebug, EndLocation, FColor::Red, true, -1.f, 0, .0f);
 		}
 
@@ -488,8 +491,8 @@ bool ASVONVolumeActor::FindLinkInDirection(FLayerIndex LayerIndex, const FNodeIn
 	X = SX; Y = SY; Z = SZ;
 
 	// Get the morton Code for the direction
-	auto Code = morton3D_64_encode(X, Y, Z);
-	bool bIsHigher = Code > Node.Code;
+    const auto Code = morton3D_64_encode(X, Y, Z);
+    const auto bIsHigher = Code > Node.Code;
 	auto NodeDelta = (bIsHigher ?  1 : - 1);
 
 	while ((NodeIndex + NodeDelta) < Layer.Num() && NodeIndex + NodeDelta >= 0)
@@ -497,12 +500,12 @@ bool ASVONVolumeActor::FindLinkInDirection(FLayerIndex LayerIndex, const FNodeIn
 		// This is the Node we're looking for
         if (Layer[NodeIndex + NodeDelta].Code == Code)
         {
-            const FSVONNode& Node = Layer[NodeIndex + NodeDelta];
+            const auto& NodeOnLayer = Layer[NodeIndex + NodeDelta];
             // This is a Leaf Node
-            if (LayerIndex == 0 && Node.HasChildren())
+            if (LayerIndex == 0 && NodeOnLayer.HasChildren())
             {
                 // Set invalid link if the Leaf Node is completely blocked, no point linking to it
-                if (GetLeafNode(Node.FirstChild.NodeIndex).IsCompletelyBlocked())
+                if (GetLeafNode(NodeOnLayer.FirstChild.NodeIndex).IsCompletelyBlocked())
                 {
                     OutLinkToUpdate.SetInvalid();
                     return true;
@@ -533,15 +536,16 @@ bool ASVONVolumeActor::FindLinkInDirection(FLayerIndex LayerIndex, const FNodeIn
 	return false;
 }
 
-void ASVONVolumeActor::RasterizeLeafNode(FVector& Origin, FNodeIndex LeafIndex)
+void ASVONVolumeActor::RasterizeLeafNode(FVector& InOrigin, const FNodeIndex LeafIndex)
 {
+	// @todo: remove magic number
 	for (auto i = 0; i < 64; i++)
 	{
 		uint_fast32_t X, Y, Z;
 		morton3D_64_decode(i, X, Y, Z);
 
-		float LeafVoxelSize = GetVoxelSize(0) * 0.25f;
-		FVector Location = Origin + FVector(X * LeafVoxelSize, Y * LeafVoxelSize, Z * LeafVoxelSize) + FVector(LeafVoxelSize * 0.5f);
+        const auto LeafVoxelSize = GetVoxelSize(0) * 0.25f;
+        auto Location = InOrigin + FVector(X * LeafVoxelSize, Y * LeafVoxelSize, Z * LeafVoxelSize) + FVector(LeafVoxelSize * 0.5f);
 
 		if (LeafIndex >= Data.LeafNodes.Num() - 1)
 			Data.LeafNodes.AddDefaulted(1);
@@ -556,20 +560,20 @@ void ASVONVolumeActor::RasterizeLeafNode(FVector& Origin, FNodeIndex LeafIndex)
 	}
 }
 
-TArray<FSVONNode>& ASVONVolumeActor::GetLayer(FLayerIndex LayerIndex)
+TArray<FSVONNode>& ASVONVolumeActor::GetLayer(const FLayerIndex LayerIndex)
 {
 	return Data.Layers[LayerIndex];
 }
 
-const TArray<FSVONNode>& ASVONVolumeActor::GetLayer(FLayerIndex LayerIndex) const
+const TArray<FSVONNode>& ASVONVolumeActor::GetLayer(const FLayerIndex LayerIndex) const
 {
 	return Data.Layers[LayerIndex];
 }
 
 // Check for blocking...using this cached set for each LayerIndex for now for fast lookups
-bool ASVONVolumeActor::IsAnyMemberBlocked(FLayerIndex LayerIndex, FMortonCode Code)
+bool ASVONVolumeActor::IsAnyMemberBlocked(const FLayerIndex LayerIndex, const FMortonCode Code)
 {
-	FMortonCode ParentCode = Code >> 3;
+    const auto ParentCode = Code >> 3;
 	if (LayerIndex == BlockedIndices.Num())
 		return true;
 
@@ -582,10 +586,12 @@ bool ASVONVolumeActor::IsAnyMemberBlocked(FLayerIndex LayerIndex, FMortonCode Co
 
 bool ASVONVolumeActor::IsBlocked(const FVector& Location, const float Size) const
 {
+	static FName NAME_TraceTag = TEXT("SVONLeafRasterize");
+
 	FCollisionQueryParams Params;
 	Params.bFindInitialOverlaps = true;
 	Params.bTraceComplex = false;
-	Params.TraceTag = "SVONLeafRasterize";
+	Params.TraceTag = NAME_TraceTag;
 
 	return GetWorld()->OverlapBlockingTestByChannel(Location, FQuat::Identity, CollisionChannel, FCollisionShape::MakeBox(FVector(Size + Clearance)), Params);
 }
@@ -600,17 +606,17 @@ bool ASVONVolumeActor::SetNeighbor(const FLayerIndex LayerIndex, const FNodeInde
 	return false;
 }
 
-void ASVONVolumeActor::RasterizeLayer(FLayerIndex LayerIndex)
+void ASVONVolumeActor::RasterizeLayer(const FLayerIndex LayerIndex)
 {
     FNodeIndex LeafIndex = 0;
     // LayerIndex 0 Leaf nodes are special
     if (LayerIndex == 0)
     {
         // Run through all our coordinates
-        auto NumNodes = GetNodesInLayer(LayerIndex);
+        const auto NumNodes = GetNodesInLayer(LayerIndex);
         for (auto i = 0; i < NumNodes; i++)
         {
-            int Index = i;
+            auto Index = i;
 
             // If we know this Node needs to be added, from the low res first pass
             if (BlockedIndices[0].Contains(i >> 3))
@@ -636,15 +642,17 @@ void ASVONVolumeActor::RasterizeLayer(FLayerIndex LayerIndex)
                 FVector Location;
                 GetNodeLocation(0, i, Location);
 
+				static FName NAME_TraceTag = TEXT("SVONRasterize");
+
                 FCollisionQueryParams Params;
                 Params.bFindInitialOverlaps = true;
                 Params.bTraceComplex = false;
-                Params.TraceTag = "SVONRasterize";
+                Params.TraceTag = NAME_TraceTag;
 
                 if (IsBlocked(Location, GetVoxelSize(0) * 0.5f))
                 {
                     // Rasterize my Leaf nodes
-                    FVector LeafOrigin = NodeLocation - (FVector(GetVoxelSize(LayerIndex) * 0.5f));
+                    auto LeafOrigin = NodeLocation - (FVector(GetVoxelSize(LayerIndex) * 0.5f));
                     RasterizeLeafNode(LeafOrigin, LeafIndex);
                     Node.FirstChild.LayerIndex = 0;
                     Node.FirstChild.NodeIndex = LeafIndex;
@@ -663,8 +671,8 @@ void ASVONVolumeActor::RasterizeLayer(FLayerIndex LayerIndex)
     // Deal with the other layers
     else if (GetLayer(LayerIndex - 1).Num() > 1)
     {
-        int32 NodeCounter = 0;
-        int32 NumNodes = GetNodesInLayer(LayerIndex);
+        auto NodeCounter = 0;
+        const int32 NumNodes = GetNodesInLayer(LayerIndex);
         for (auto i = 0; i < NumNodes; i++)
         {
             // Do we have any blocking children, or siblings?
@@ -672,13 +680,13 @@ void ASVONVolumeActor::RasterizeLayer(FLayerIndex LayerIndex)
             if (IsAnyMemberBlocked(LayerIndex, i))
             {
                 // Add a Node
-                auto Index = GetLayer(LayerIndex).Emplace();
+                const auto Index = GetLayer(LayerIndex).Emplace();
                 NodeCounter++;
-                FSVONNode& Node = GetLayer(LayerIndex)[Index];
+                auto& Node = GetLayer(LayerIndex)[Index];
 
                 // Set details
                 Node.Code = i;
-                FNodeIndex ChildIndex = 0;
+                auto ChildIndex = 0;
                 if (GetIndexForCode(LayerIndex - 1, Node.Code << 3, ChildIndex))
                 {
                     // Set parent->child links

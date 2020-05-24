@@ -4,7 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "NavigationData.h"
-#include "ThreadSafeBool.h"
+#include "HAL/ThreadSafeBool.h"
 #include "Components/LineBatchComponent.h "
 
 #include "SVONVolumeActor.h"
