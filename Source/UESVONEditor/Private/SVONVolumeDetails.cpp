@@ -13,7 +13,7 @@ TSharedRef<IDetailCustomization> FSVONVolumeDetails::MakeInstance()
 	return MakeShareable(new FSVONVolumeDetails);
 }
 
-void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
+void FSVONVolumeDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
 	auto PrimaryTickProperty = DetailBuilder.GetProperty(GET_MEMBER_NAME_CHECKED(UActorComponent, PrimaryComponentTick));
 
@@ -33,6 +33,7 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 
 	auto& NavigationCategory = DetailBuilder.EditCategory(TEXT("SVON"));
 
+	auto DebugDistanceProperty = DetailBuilder.GetProperty(TEXT("DebugDistance"));
 	auto ShowVoxelProperty = DetailBuilder.GetProperty(TEXT("bShowVoxels"));
 	auto ShowVoxelLeafProperty = DetailBuilder.GetProperty(TEXT("bShowLeafVoxels"));
 	auto ShowMortonCodesProperty = DetailBuilder.GetProperty(TEXT("bShowMortonCodes"));
@@ -44,7 +45,8 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 	auto GenerationStrategyProperty = DetailBuilder.GetProperty(TEXT("GenerationStrategy"));
 	auto NumLayersProperty = DetailBuilder.GetProperty(TEXT("NumLayers"));
 	auto NumBytesProperty = DetailBuilder.GetProperty(TEXT("NumBytes"));
-	
+
+	DebugDistanceProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Debug Distance", "Debug Distance"));
 	ShowVoxelProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Debug Voxels", "Debug Voxels"));
 	ShowVoxelLeafProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Debug Leaf Voxels", "Debug Leaf Voxels"));
 	ShowMortonCodesProperty->SetPropertyDisplayName(NSLOCTEXT("SVO Volume", "Debug Morton Codes", "Debug Morton Codes"));
@@ -66,14 +68,14 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 	NavigationCategory.AddProperty(NumLayersProperty);
 	NavigationCategory.AddProperty(NumBytesProperty);
 
-	const TArray<TWeakObjectPtr<UObject>>& SelectedObjects = DetailBuilder.GetSelectedObjects();
+	const auto& SelectedObjects = DetailBuilder.GetSelectedObjects();
 
-	for (int32 ObjectIndex = 0; ObjectIndex < SelectedObjects.Num(); ++ObjectIndex)
+	for (auto ObjectIdx = 0; ObjectIdx < SelectedObjects.Num(); ++ObjectIdx)
 	{
-		const TWeakObjectPtr<UObject>& CurrentObject = SelectedObjects[ObjectIndex];
+		const auto& CurrentObject = SelectedObjects[ObjectIdx];
 		if (CurrentObject.IsValid())
 		{
-			auto CurrentVolume = Cast<ASVONVolumeActor>(CurrentObject.Get());
+            auto* CurrentVolume = Cast<ASVONVolumeActor>(CurrentObject.Get());
 			if (CurrentVolume != nullptr)
 			{
 				Volume = CurrentVolume;
@@ -106,6 +108,31 @@ void FSVONVolumeDetails::CustomizeDetails( IDetailLayoutBuilder& DetailBuilder )
 		    ]
 		];
 
+	DetailBuilder.EditCategory(TEXT("SVON"))
+		.AddCustomRow(NSLOCTEXT("SVO Volume", "Clear", "Clear"))
+		.NameContent()
+		[
+			SNew(STextBlock)
+			.Font(IDetailLayoutBuilder::GetDetailFont())
+		    .Text(NSLOCTEXT("SVO Volume", "Clear", "Clear"))
+		]
+	    .ValueContent()
+		.MaxDesiredWidth(125.f)
+		.MinDesiredWidth(125.f)
+		[
+			SNew(SButton)
+			.ContentPadding(2)
+		    .VAlign(VAlign_Center)
+		    .HAlign(HAlign_Center)
+		    .OnClicked(this, &FSVONVolumeDetails::OnClearVolumeClick)
+		    [
+			    SNew(STextBlock)
+			    .Font(IDetailLayoutBuilder::GetDetailFont())
+		        .Text(NSLOCTEXT("SVO Volume", "Clear", "Clear"))
+		    ]
+	    ];
+
+	NavigationCategory.AddProperty(DebugDistanceProperty);
 	NavigationCategory.AddProperty(ShowVoxelProperty);
 	NavigationCategory.AddProperty(ShowVoxelLeafProperty);
 	NavigationCategory.AddProperty(ShowMortonCodesProperty);
@@ -117,6 +144,14 @@ FReply FSVONVolumeDetails::OnUpdateVolume()
 {
 	if (Volume.IsValid())	
 		Volume->Generate();
+
+	return FReply::Handled();
+}
+
+FReply FSVONVolumeDetails::OnClearVolumeClick()
+{
+    if(Volume.IsValid())
+		Volume->ClearData();
 
 	return FReply::Handled();
 }

@@ -28,6 +28,7 @@ public:
     ASVONVolumeActor();
 
 	virtual void BeginPlay() override;
+	void Tick(float DeltaSeconds) override;
 
 	//~ Begin AActor Interface
 	virtual void PostRegisterAllComponents() override;
@@ -42,7 +43,8 @@ public:
 
 	bool ShouldTickIfViewportsOnly() const override { return true; }
 	//~ End UObject Interface
-#endif // WITH_EDITOR
+#endif
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
 	float DebugDistance = 5000.0f;
 
@@ -73,13 +75,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
 	ESVOGenerationStrategy GenerationStrategy = ESVOGenerationStrategy::SGS_UseBaked;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "SVON")
 	uint8 NumLayers = 0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SVON")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "SVON")
 	int32 NumBytes;
 
 	bool Generate();
+	bool ClearData();
 
 	const FVector& GetOrigin() const { return Origin; }
 	const FVector& GetExtent() const { return Extent; }
@@ -100,7 +103,10 @@ public:
 	virtual void Serialize(FArchive& Ar) override;
 
 private:
+	TArray<FTraceHandle> PendingTraces;
+
 	bool bIsReadyForNavigation = false;
+	FWorldAsyncTraceState AsyncTraceState;
 
 	FVector Origin;
 	FVector Extent;
@@ -113,7 +119,7 @@ private:
 
 	TArray<FSVONNode>& GetLayer(FLayerIndex LayerIndex);
 
-	void SetupVolume();
+	void UpdateBounds();
 
 	bool FirstPassRasterize();
 	void RasterizeLayer(FLayerIndex LayerIndex);
@@ -133,4 +139,9 @@ private:
 	bool IsBlocked(const FVector& Location, const float Size) const;
 
 	bool IsInDebugRange(const FVector& Location) const;
+
+	//TFuture<TSet<FMortonCode>> AsyncOverlapBlockingTestByChannel(const TArray<FVector>& Locations, ECollisionChannel InCollisionChannel, const FCollisionShape& CollisionShape, const FCollisionQueryParams& Params = FCollisionQueryParams::DefaultQueryParam);
+	void StartBlockingTests(const TArray<FVector>& Locations, ECollisionChannel InCollisionChannel, const FCollisionShape& CollisionShape, const FCollisionQueryParams& Params = FCollisionQueryParams::DefaultQueryParam);
+	void OnBlockingTestsComplete(const TArray<FTraceHandle>& InTraceHandles);
 };
+

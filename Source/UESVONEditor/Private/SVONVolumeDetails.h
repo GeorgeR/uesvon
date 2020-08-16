@@ -17,6 +17,7 @@ public:
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
 
 	FReply OnUpdateVolume();
+	FReply OnClearVolumeClick();
 
 private:
 	TWeakObjectPtr<ASVONVolumeActor> Volume;
